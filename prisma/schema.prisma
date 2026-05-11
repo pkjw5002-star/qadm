@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum FormType {
+  COMPLAINT            // 불만신고서
+  QUALITY_IMPROVEMENT  // 품질개선의뢰서
+  ABNORMAL_REPORT      // 이상발생신고서
+  WORK_COOP            // 업무협조전
+  SUGGESTION           // 제안서
+}
+
+enum FormStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         UserRole @default(USER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  formsCreated  Form[] @relation("FormCreatedBy")
+  eventsActed   FormEvent[]
+}
+
+model Form {
+  id     String   @id @default(cuid())
+  type   FormType
+  status FormStatus @default(DRAFT)
+
+  title String
+  // Flexible payload for per-form fields. Keep a stable contract per FormType in the UI.
+  data Json
+
+  createdById String
+  createdBy   User   @relation("FormCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events FormEvent[]
+
+  @@index([type, status])
+  @@index([createdById, createdAt])
+}
+
+model FormEvent {
+  id      String @id @default(cuid())
+  formId  String
+  actorId String
+
+  action  String
+  payload Json?
+
+  createdAt DateTime @default(now())
+
+  form  Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([formId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model DepartmentOwnerOption {
+  id    String @id @default(cuid())
+  label String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
