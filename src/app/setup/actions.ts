@@ -33,6 +33,6 @@ export async function setupAdminAction(_: unknown, formData: FormData) {
     },
   });
 
-  redirect("/login");
+  redirect("/admin/login");
 }
 

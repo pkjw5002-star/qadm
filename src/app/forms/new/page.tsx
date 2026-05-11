@@ -40,6 +40,7 @@ export default async function NewFormPage() {
       nextWorkCoopNo={nextWorkCoopNo}
       nextSuggestionNo={nextSuggestionNo}
       currentUserName={user.name}
+      canManageDepartmentOwners={user.role === "ADMIN"}
     />
   );
 }

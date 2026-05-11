@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import CommentsPanel from "@/app/forms/[id]/CommentsPanel";
+import DeleteFormForm from "@/app/forms/[id]/DeleteFormForm";
 
 function DetailBlock({
   label,
@@ -59,40 +61,6 @@ function InfoRow({
   );
 }
 
-const typeLabel: Record<string, string> = {
-  COMPLAINT: "불만신고서",
-  QUALITY_IMPROVEMENT: "품질개선의뢰서",
-  ABNORMAL_REPORT: "이상발생신고서",
-  WORK_COOP: "업무협조전",
-  SUGGESTION: "제안서",
-};
-
-const statusLabel: Record<string, string> = {
-  DRAFT: "작성중",
-  SUBMITTED: "제출",
-  IN_REVIEW: "검토중",
-  APPROVED: "승인",
-  REJECTED: "반려",
-  CLOSED: "종료",
-};
-
-/** 접수 일자 등을 한국어 달력 표기(작성일 기준으로 읽기 쉽게) */
-function formatKoreanCalendarDate(raw: unknown): string {
-  if (raw === undefined || raw === null) return "—";
-  const s = String(raw).trim();
-  if (s === "") return "—";
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(s)
-    ? new Date(`${s}T12:00:00`)
-    : new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
-}
-
 /** 표 형태 한 줄 행용(요일 생략 → 칸이 좁아져도 덜 깨짐) */
 function formatKoreanDateCompact(raw: unknown): string {
   if (raw === undefined || raw === null) return "—";
@@ -115,6 +83,7 @@ export default async function FormDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const user = await requireUser();
 
   const form = await prisma.form.findUnique({
     where: { id },
@@ -352,21 +321,39 @@ export default async function FormDetailPage({
         ? String(data.details)
         : "";
 
+  const displayFormNo = (() => {
+    const t = String(form.type);
+    let raw: unknown;
+    switch (t) {
+      case "COMPLAINT":
+        raw = data.complaint?.formNo;
+        break;
+      case "QUALITY_IMPROVEMENT":
+        raw = data.qualityImprovement?.formNo;
+        break;
+      case "ABNORMAL_REPORT":
+        raw = data.abnormalReport?.formNo;
+        break;
+      case "WORK_COOP":
+        raw = data.workCoop?.formNo;
+        break;
+      case "SUGGESTION":
+        raw = data.suggestion?.formNo;
+        break;
+      default:
+        raw = undefined;
+    }
+    if (raw != null && String(raw).trim() !== "") return String(raw).trim();
+    return form.title;
+  })();
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <div className="text-xs font-medium text-zinc-500">
-            {typeLabel[String(form.type)] ?? String(form.type)} ·{" "}
-            {statusLabel[String(form.status)] ?? String(form.status)}
-          </div>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight">
-            {form.title}
+          <h1 className="text-xl font-semibold tracking-tight">
+            {displayFormNo}
           </h1>
-          <div className="mt-1 text-sm text-zinc-600">
-            작성자 {form.createdBy.name} ·{" "}
-            {new Date(form.createdAt).toLocaleString()}
-          </div>
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {String(form.type) === "COMPLAINT" ||
@@ -374,12 +361,17 @@ export default async function FormDetailPage({
           String(form.type) === "ABNORMAL_REPORT" ||
           String(form.type) === "WORK_COOP" ||
           String(form.type) === "SUGGESTION" ? (
-            <Link
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
-              href={`/forms/${form.id}/edit`}
-            >
-              수정
-            </Link>
+            <>
+              <Link
+                className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+                href={`/forms/${form.id}/edit`}
+              >
+                수정
+              </Link>
+              {user.role === "ADMIN" ? (
+                <DeleteFormForm formId={form.id} />
+              ) : null}
+            </>
           ) : null}
           <Link
             className="text-sm font-medium text-zinc-900 underline"
@@ -1176,11 +1168,6 @@ export default async function FormDetailPage({
                       value: outsideAs.place ? String(outsideAs.place) : "—",
                       flex: "flex-[1.6]",
                     },
-                    {
-                      label: "소요시간",
-                      value: outsideAs.duration ? String(outsideAs.duration) : "—",
-                      flex: "flex-1",
-                    },
                   ]}
                 />
                 <div className="mt-3">
@@ -1190,6 +1177,17 @@ export default async function FormDetailPage({
                   <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-900">
                     {outsideAs.contentAndResult
                       ? String(outsideAs.contentAndResult)
+                      : "—"}
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-xs font-medium text-zinc-500">
+                    사외AS시간
+                  </div>
+                  <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-900">
+                    {outsideAs.duration != null &&
+                    String(outsideAs.duration).trim() !== ""
+                      ? String(outsideAs.duration)
                       : "—"}
                   </div>
                 </div>

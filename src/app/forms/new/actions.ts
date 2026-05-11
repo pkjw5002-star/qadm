@@ -27,6 +27,63 @@ const optionalTrimmedNonEmpty = z.preprocess((v) => {
   return s === "" ? undefined : s;
 }, z.string().min(1).optional());
 
+/** Zod 필드 키 → 화면 한글명 (필수 미입력 안내용) */
+const FORM_FIELD_LABEL_KO: Record<string, string> = {
+  type: "서식 종류 선택",
+  title: "제목",
+  receiptDate: "접수 일자",
+  complaintProductName: "불만신고 제품명",
+  departmentOwnerOptionId: "해당부서 및 담당자",
+  customerInfo: "고객정보",
+  productAndComplaint: "세부품명 및 불만신고내용",
+  productManufacturing: "불만제품 제조번호 / 제조일자 / 작업자",
+  recoveryProcessingContent: "회수품처리 처리내용",
+  recoveryProcessingDetail: "회수품처리 처리 상세내용",
+  qiReceiptDate: "접수 일자",
+  qiWriterName: "작성자",
+  qiItemSpec: "의뢰품명/사양",
+  qiRequestReasonDetails: "의뢰사유 및 세부 의뢰내용",
+  qiReviewDepartmentOwner: "검토부서/담당자",
+  qiReviewDate: "검토일자",
+  qiConfirmDate: "확인날짜",
+  qiConfirmContent: "확인내용",
+  abReportDate: "신고(요청) 일자",
+  abWriterName: "작성자",
+  abItemSpec: "품목/사양",
+  abProblemAndRequest: "문제점 및 이상현상·협조요청 내용",
+  abHandlingDepartmentOwner: "처리(수신)부서/담당자",
+  abHandlingDate: "처리일자",
+  abConfirmDate: "확인날짜",
+  abConfirmContent: "확인내용",
+  sgProposalDate: "작성일자",
+  sgWriterName: "작성자",
+  sgProposalContent: "제안내용",
+  sgProposalEffect: "제안효과",
+  sgReviewDate: "심사일",
+  sgReviewerComment: "심사자 Comment 등",
+  sgProcessingPlannedDate: "처리(예정)일자",
+  sgProcessingContent: "처리내용",
+};
+
+function formFieldsValidationMessage(error: z.ZodError): string {
+  for (const issue of error.issues) {
+    if (issue.code === "custom" && issue.message) {
+      return issue.message;
+    }
+    const leaf = issue.path[issue.path.length - 1];
+    if (leaf === "type") {
+      return "서식 종류를 확인해 주세요.";
+    }
+    if (typeof leaf === "string") {
+      const label = FORM_FIELD_LABEL_KO[leaf];
+      if (label) {
+        return `${label}은(는) 필수입니다.`;
+      }
+    }
+  }
+  return "필수 항목을 확인해 주세요.";
+}
+
 const recoveryProcessingContentOptional = z.preprocess((v) => {
   if (v === undefined || v === null) return undefined;
   const s = String(v).trim();
@@ -536,7 +593,10 @@ export async function createFormAction(_: unknown, formData: FormData) {
   } as unknown);
 
   if (!parsed.success) {
-    return { ok: false as const, message: "필수 항목을 확인해 주세요." };
+    return {
+      ok: false as const,
+      message: formFieldsValidationMessage(parsed.error),
+    };
   }
 
   let rawAttachments: RawComplaintPhotoAttachments = {};
@@ -926,7 +986,10 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
     complaintFieldsFromFormData(formData)
   );
   if (!parsed.success) {
-    return { ok: false as const, message: "필수 항목을 확인해 주세요." };
+    return {
+      ok: false as const,
+      message: formFieldsValidationMessage(parsed.error),
+    };
   }
 
   const ph = await parseComplaintPhotoAttachments(formData);
@@ -1026,7 +1089,10 @@ export async function updateQualityImprovementFormAction(
     qiConfirmContent: String(formData.get("qiConfirmContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return { ok: false as const, message: "필수 항목을 확인해 주세요." };
+    return {
+      ok: false as const,
+      message: formFieldsValidationMessage(parsed.error),
+    };
   }
 
   const photos = await parseQualityImprovementPhotos(formData);
@@ -1140,7 +1206,10 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
     abConfirmContent: String(formData.get("abConfirmContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return { ok: false as const, message: "필수 항목을 확인해 주세요." };
+    return {
+      ok: false as const,
+      message: formFieldsValidationMessage(parsed.error),
+    };
   }
 
   const photos = await parseAbnormalReportPhotos(formData);
@@ -1260,7 +1329,10 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
     abConfirmContent: String(formData.get("abConfirmContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return { ok: false as const, message: "필수 항목을 확인해 주세요." };
+    return {
+      ok: false as const,
+      message: formFieldsValidationMessage(parsed.error),
+    };
   }
 
   const photos = await parseAbnormalReportPhotos(formData);
@@ -1376,7 +1448,10 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
     sgProcessingContent: String(formData.get("sgProcessingContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return { ok: false as const, message: "필수 항목을 확인해 주세요." };
+    return {
+      ok: false as const,
+      message: formFieldsValidationMessage(parsed.error),
+    };
   }
 
   const photos = await parseSuggestionPhotos(formData);

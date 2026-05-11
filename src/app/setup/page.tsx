@@ -67,11 +67,24 @@ export default function SetupPage() {
           ) : null}
         </form>
 
-        <div className="mt-6 text-sm text-zinc-600">
-          로그인으로 돌아가기{" "}
-          <Link className="font-medium text-zinc-900 underline" href="/login">
-            /login
-          </Link>
+        <div className="mt-6 space-y-2 text-sm text-zinc-600">
+          <p>
+            생성 후{" "}
+            <Link
+              className="font-medium text-zinc-900 underline"
+              href="/admin/login"
+            >
+              관리자 로그인
+            </Link>
+            에서 접속한 뒤, 직원 계정은 관리 화면의 사용자 메뉴에서 등록할 수
+            있습니다.
+          </p>
+          <p>
+            직원용 로그인:{" "}
+            <Link className="font-medium text-zinc-900 underline" href="/login">
+              /login
+            </Link>
+          </p>
         </div>
       </div>
     </div>

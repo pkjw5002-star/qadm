@@ -5,6 +5,11 @@
   --foreground: #171717;
 }
 
+/* 기본 16px 대비 약 6% — 전체 UI 글자·rem 기반 크기가 살짝 커짐 */
+html {
+  font-size: 106.25%;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

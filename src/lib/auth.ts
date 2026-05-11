@@ -21,9 +21,22 @@ export async function requireUser() {
     select: { id: true, email: true, name: true, role: true },
   });
   if (!user) {
-    session.destroy();
-    redirect("/login");
+    // Server Component에서는 쿠키 수정 불가 → Route Handler에서 destroy
+    redirect("/logout");
   }
   return user;
 }
 
+/** 관리자 전용 페이지. 미로그인은 `/admin/login`, 일반 사용자는 `/forms` */
+export async function requireAdmin() {
+  const session = await getSession();
+  if (!session.userId) redirect("/admin/login");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, email: true, name: true, role: true },
+  });
+  if (!user) redirect("/logout");
+  if (user.role !== "ADMIN") redirect("/forms");
+  return user;
+}

@@ -52,6 +52,7 @@ export default async function EditComplaintFormPage({
       editType={form.type}
       defaults={defaults}
       currentUserName={user.name}
+      canManageDepartmentOwners={user.role === "ADMIN"}
     />
   );
 }

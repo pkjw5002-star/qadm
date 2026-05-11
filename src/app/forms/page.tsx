@@ -1,7 +1,22 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
 import { FORM_TYPE_LABEL, isFormTypeKey, type FormTypeKey } from "@/lib/formTypes";
+import ComplaintFormsTable, {
+  type ComplaintListRowVm,
+} from "@/app/forms/ComplaintFormsTable";
+import ReviewProcessFilterFormsTable, {
+  type ReviewProcessFilterRow,
+} from "@/app/forms/ReviewProcessFilterFormsTable";
+import {
+  QUALITY_IMPROVEMENT_LIST_COLUMNS,
+  QUALITY_IMPROVEMENT_LIST_STORAGE_KEY,
+  ABNORMAL_REPORT_LIST_COLUMNS,
+  ABNORMAL_REPORT_LIST_STORAGE_KEY,
+  WORK_COOP_LIST_COLUMNS,
+  WORK_COOP_LIST_STORAGE_KEY,
+  SUGGESTION_LIST_COLUMNS,
+  SUGGESTION_LIST_STORAGE_KEY,
+} from "@/app/forms/formListTablePresets";
 
 const statusLabel: Record<string, string> = {
   DRAFT: "작성중",
@@ -25,6 +40,12 @@ function formatListDate(raw: unknown): string {
     month: "numeric",
     day: "numeric",
   });
+}
+
+/** 불만 목록: 회수일·원인분석일 등 공란 여부(원본 JSON 값 기준) */
+function complaintListDateMissing(raw: unknown): boolean {
+  if (raw === undefined || raw === null) return true;
+  return String(raw).trim() === "";
 }
 
 /** 사외AS 목록 셀: `일자/실시자` (없으면 해당쪽 —) */
@@ -119,6 +140,7 @@ function complaintListRow(data: unknown, title: string) {
         date?: unknown;
         executor?: unknown;
         contentAndResult?: unknown;
+        duration?: unknown;
       };
       productionHandlingReport?: {
         defectiveProductRecoveryDate?: unknown;
@@ -179,6 +201,8 @@ function complaintListRow(data: unknown, title: string) {
       String(o.contentAndResult).trim() !== ""
         ? String(o.contentAndResult)
         : "—",
+    /** 열 헤더는 「사외AS시간」, 값은 소요시간(duration) */
+    outsideAsTime: textOrDash(o?.duration),
     recoveryDate: prod?.defectiveProductRecoveryDate,
     causeAnalysisDate: prod?.causeAnalysisDate,
     defectPhenomenon: defectPhenomenonText(prod),
@@ -251,7 +275,7 @@ type AbLikeJson = {
     date?: unknown;
     causeAndActionPrevention?: unknown;
   };
-  reporterConfirm?: { content?: unknown };
+  reporterConfirm?: { date?: unknown; content?: unknown };
 };
 
 function abLikeListRow(
@@ -395,118 +419,6 @@ function getCommentPreview(
   return { line, tooltip };
 }
 
-/** 최신 댓글 미리보기 + 마우스 호버 시 전체 (목록 표 전용) */
-function CommentCell({
-  latest,
-  totalCount,
-}: {
-  latest?: LatestComment;
-  totalCount: number;
-}) {
-  const preview = getCommentPreview(latest, totalCount);
-  if (!preview) {
-    return (
-      <td className="max-w-[11rem] border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug text-zinc-500">
-        —
-      </td>
-    );
-  }
-  return (
-    <td className="max-w-[11rem] border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug text-zinc-800">
-      <div
-        className="line-clamp-2 break-words whitespace-pre-wrap"
-        title={preview.tooltip}
-      >
-        {preview.line}
-      </div>
-    </td>
-  );
-}
-
-/** 표시가 잘릴 수 있는 셀: 명시 title 없으면 문자열 children 전체를 네이티브 툴팁으로 */
-function cellTooltip(
-  explicitTitle: string | undefined,
-  children: ReactNode
-): string | undefined {
-  if (explicitTitle != null && String(explicitTitle).trim() !== "") {
-    return explicitTitle;
-  }
-  if (typeof children === "string") {
-    const t = children.trim();
-    if (t === "" || t === "—") return undefined;
-    return children;
-  }
-  return undefined;
-}
-
-function ListCell({
-  children,
-  title,
-  compact,
-  wide,
-  dateColumn,
-}: {
-  children: ReactNode;
-  title?: string;
-  /** 짧은 고정폭(일자·이름 등); 길면 말줄임, 전체는 title 툴팁 */
-  compact?: boolean;
-  /** 불만 목록 등 긴 본문 열 — 기본보다 넓게 */
-  wide?: boolean;
-  /** 불만 목록 접수일 등 짧은 날짜 열 */
-  dateColumn?: boolean;
-}) {
-  const tip = cellTooltip(title, children);
-  if (dateColumn && !compact && !wide) {
-    return (
-      <td className="w-[5rem] max-w-[5rem] shrink-0 border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug text-zinc-800">
-        <div className="truncate whitespace-nowrap" title={tip}>
-          {children}
-        </div>
-      </td>
-    );
-  }
-  if (compact) {
-    return (
-      <td className="w-[8.5rem] max-w-[8.5rem] shrink-0 border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug text-zinc-800">
-        <div className="truncate" title={tip}>
-          {children}
-        </div>
-      </td>
-    );
-  }
-  return (
-    <td
-      className={
-        wide
-          ? "min-w-[13rem] max-w-[13rem] border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug text-zinc-800"
-          : "max-w-[11rem] border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug text-zinc-800"
-      }
-    >
-      <div
-        className="line-clamp-3 break-words whitespace-pre-wrap"
-        title={tip}
-      >
-        {children}
-      </div>
-    </td>
-  );
-}
-
-function NoCell({ href, no }: { href: string; no: string }) {
-  const label = no.trim() !== "" ? no : "—";
-  return (
-    <td className="w-14 max-w-14 border-b border-zinc-100 px-1 py-2 align-top">
-      <Link
-        href={href}
-        title={label !== "—" ? label : undefined}
-        className="block truncate whitespace-nowrap font-medium text-zinc-900 hover:underline"
-      >
-        {label}
-      </Link>
-    </td>
-  );
-}
-
 export default async function FormsPage({
   searchParams,
 }: {
@@ -522,19 +434,15 @@ export default async function FormsPage({
   const isWorkCoopList = type === "WORK_COOP";
   const isSuggestionList = type === "SUGGESTION";
 
+  const listPageTitle =
+    type !== undefined ? FORM_TYPE_LABEL[type] : "서식 목록";
+
   const loadFormDataJson =
     isComplaintList ||
     isQualityImprovementList ||
     isAbnormalList ||
     isWorkCoopList ||
     isSuggestionList;
-
-  const showWideTableHint =
-    type === "COMPLAINT" ||
-    type === "QUALITY_IMPROVEMENT" ||
-    type === "ABNORMAL_REPORT" ||
-    type === "WORK_COOP" ||
-    type === "SUGGESTION";
 
   const forms = await prisma.form.findMany({
     where: type ? { type } : undefined,
@@ -579,20 +487,206 @@ export default async function FormsPage({
     }
   }
 
+  const complaintRows: ComplaintListRowVm[] = isComplaintList
+    ? forms.map((f) => {
+        const row = complaintListRow(f.data, f.title);
+        const productLabel =
+          row.productName != null && String(row.productName).trim() !== ""
+            ? String(row.productName)
+            : "—";
+        const deptLabel =
+          row.departmentAndOwner != null &&
+          String(row.departmentAndOwner).trim() !== ""
+            ? String(row.departmentAndOwner)
+            : "—";
+        const preview = getCommentPreview(
+          f.events[0],
+          commentCountMap.get(f.id) ?? 0
+        );
+        const missingRecoveryDate = complaintListDateMissing(
+          row.recoveryDate
+        );
+        const recoveredWithoutCauseAnalysisDate =
+          !missingRecoveryDate &&
+          complaintListDateMissing(row.causeAnalysisDate);
+        return {
+          id: f.id,
+          no: String(row.no),
+          receiptDate: formatListDate(row.receiptDate),
+          customerInfo: row.customerInfo,
+          productName: productLabel,
+          departmentAndOwner: deptLabel,
+          content: row.content,
+          actionContent: row.actionContent,
+          outsideAsDateAndExecutor: row.outsideAsDateAndExecutor,
+          outsideAsContent: row.outsideAsContent,
+          outsideAsTime: row.outsideAsTime,
+          recoveryDate: formatListDate(row.recoveryDate),
+          causeAnalysisDate: formatListDate(row.causeAnalysisDate),
+          missingRecoveryDate,
+          recoveredWithoutCauseAnalysisDate,
+          defectPhenomenon: row.defectPhenomenon,
+          defectCauseAnalysis: row.defectCauseAnalysis,
+          recurrencePrevention: row.recurrencePrevention,
+          recoveryHandlingContent: row.recoveryHandlingContent,
+          commentLine: preview?.line ?? null,
+          commentTooltip: preview?.tooltip ?? null,
+        };
+      })
+    : [];
+
+  const qualityRows: ReviewProcessFilterRow[] = isQualityImprovementList
+    ? forms.map((f) => {
+        const authorLabel = listAuthorFromFormJson(
+          f.data,
+          "QUALITY_IMPROVEMENT",
+          f.createdBy.name
+        );
+        const row = qualityImprovementListRow(f.data, f.title);
+        const preview = getCommentPreview(
+          f.events[0],
+          commentCountMap.get(f.id) ?? 0
+        );
+        const includeWhenFiltered = complaintListDateMissing(row.reviewDate);
+        return {
+          includeWhenFiltered,
+          listRow: {
+            id: f.id,
+            cells: {
+              no: String(row.no),
+              createdAt: formatListDate(f.createdAt),
+              author: authorLabel,
+              itemSpec: row.itemSpec,
+              requestReason: row.requestReason,
+              reviewDeptOwner: row.reviewDeptOwner,
+              reviewDate: formatListDate(row.reviewDate),
+              improvementContent: row.improvementContent,
+              requesterConfirm: row.requesterConfirmContent,
+            },
+            commentLine: preview?.line ?? null,
+            commentTooltip: preview?.tooltip ?? null,
+          },
+        };
+      })
+    : [];
+
+  const abnormalRows: ReviewProcessFilterRow[] = isAbnormalList
+    ? forms.map((f) => {
+        const authorLabel = listAuthorFromFormJson(
+          f.data,
+          "ABNORMAL_REPORT",
+          f.createdBy.name
+        );
+        const row = abLikeListRow(f.data, f.title, "ABNORMAL_REPORT");
+        const preview = getCommentPreview(
+          f.events[0],
+          commentCountMap.get(f.id) ?? 0
+        );
+        const includeWhenFiltered = complaintListDateMissing(row.handlingDate);
+        return {
+          includeWhenFiltered,
+          listRow: {
+            id: f.id,
+            cells: {
+              no: String(row.no),
+              author: authorLabel,
+              reportDate: formatListDate(row.reportDate),
+              itemSpec: row.itemSpec,
+              problemAndRequest: row.problemAndRequest,
+              handlingDeptOwner: row.handlingDeptOwner,
+              handlingDate: formatListDate(row.handlingDate),
+              causeAndAction: row.causeAndAction,
+              reporterConfirm: row.reporterConfirmContent,
+            },
+            commentLine: preview?.line ?? null,
+            commentTooltip: preview?.tooltip ?? null,
+          },
+        };
+      })
+    : [];
+
+  const workCoopRows: ReviewProcessFilterRow[] = isWorkCoopList
+    ? forms.map((f) => {
+        const authorLabel = listAuthorFromFormJson(
+          f.data,
+          "WORK_COOP",
+          f.createdBy.name
+        );
+        const row = abLikeListRow(f.data, f.title, "WORK_COOP");
+        const preview = getCommentPreview(
+          f.events[0],
+          commentCountMap.get(f.id) ?? 0
+        );
+        const includeWhenFiltered = complaintListDateMissing(row.handlingDate);
+        return {
+          includeWhenFiltered,
+          listRow: {
+            id: f.id,
+            cells: {
+              no: String(row.no),
+              author: authorLabel,
+              reportDate: formatListDate(row.reportDate),
+              itemSpec: row.itemSpec,
+              problemAndRequest: row.problemAndRequest,
+              handlingDeptOwner: row.handlingDeptOwner,
+              handlingDate: formatListDate(row.handlingDate),
+              causeAndAction: row.causeAndAction,
+              reporterConfirm: row.reporterConfirmContent,
+            },
+            commentLine: preview?.line ?? null,
+            commentTooltip: preview?.tooltip ?? null,
+          },
+        };
+      })
+    : [];
+
+  const suggestionRows: ReviewProcessFilterRow[] = isSuggestionList
+    ? forms.map((f) => {
+        const authorLabel = listAuthorFromFormJson(
+          f.data,
+          "SUGGESTION",
+          f.createdBy.name
+        );
+        const row = suggestionListRow(f.data, f.title);
+        const preview = getCommentPreview(
+          f.events[0],
+          commentCountMap.get(f.id) ?? 0
+        );
+        const includeWhenFiltered = complaintListDateMissing(
+          row.processingPlannedDate
+        );
+        return {
+          includeWhenFiltered,
+          listRow: {
+            id: f.id,
+            cells: {
+              no: String(row.no),
+              // 제안서: 입력 화면의 "작성일자"를 목록의 "작성일자"로 표시
+              createdAt: formatListDate(row.proposalDate),
+              author: authorLabel,
+              proposalContent: row.proposalContent,
+              proposalEffect: row.proposalEffect,
+              reviewDate: formatListDate(row.reviewDate),
+              reviewerComment: row.reviewerComment,
+              processingPlannedDate: formatListDate(
+                row.processingPlannedDate
+              ),
+              processingContent: row.processingContent,
+            },
+            commentLine: preview?.line ?? null,
+            commentTooltip: preview?.tooltip ?? null,
+          },
+        };
+      })
+    : [];
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight">서식 목록</h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            {type
-              ? `${FORM_TYPE_LABEL[type]}만 표시합니다. (최근 50건)${
-                  showWideTableHint
-                    ? " · 표가 넓으면 아래를 좌우로 스크롤하세요."
-                    : ""
-                } · 댓글은 최신 글 미리보기이며, 마우스를 올리면 전체와 건수를 볼 수 있어요.`
-              : "최근 50건까지 표시됩니다. · 댓글은 최신 글 미리보기이며, 마우스를 올리면 전체와 건수를 볼 수 있어요."}
-          </p>
+          <h1 className="text-lg font-semibold tracking-tight">
+            {listPageTitle}
+          </h1>
         </div>
       </div>
 
@@ -602,540 +696,54 @@ export default async function FormsPage({
         !isAbnormalList &&
         !isWorkCoopList &&
         !isSuggestionList ? (
-          <div className="grid grid-cols-12 gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-medium text-zinc-600">
-            <div className="col-span-2">종류</div>
+        <div className="grid grid-cols-12 gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-medium text-zinc-600">
+          <div className="col-span-2">종류</div>
             <div className="col-span-3">제목</div>
-            <div className="col-span-2">상태</div>
-            <div className="col-span-2">작성자</div>
+          <div className="col-span-2">상태</div>
+          <div className="col-span-2">작성자</div>
             <div className="col-span-2">댓글</div>
-            <div className="col-span-1 text-right">일자</div>
-          </div>
+          <div className="col-span-1 text-right">일자</div>
+        </div>
         ) : null}
 
         {forms.length === 0 ? (
           <div className="px-4 py-10 text-center text-sm text-zinc-600">
-            아직 서식이 없어요. 우측 상단에서 새 서식을 만들어 보세요.
+            아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요.
           </div>
         ) : isComplaintList ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[2230px] table-fixed border-collapse text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                <tr>
-                  <th className="w-14 whitespace-nowrap px-2 py-2">NO</th>
-                  <th className="w-[5rem] max-w-[5rem] shrink-0 whitespace-nowrap px-1.5 py-2">
-                    접수일
-                  </th>
-                  <th className="w-28 px-2 py-2">고객정보</th>
-                  <th className="w-28 px-2 py-2">제품명</th>
-                  <th className="w-28 px-2 py-2">부서_담당자</th>
-                  <th className="w-36 px-2 py-2">내용</th>
-                  <th className="w-36 px-2 py-2">조치내용</th>
-                  <th className="w-[8.5rem] max-w-[8.5rem] shrink-0 whitespace-normal px-1.5 py-2 text-[11px] leading-tight">
-                    사외AS일자및실시자
-                  </th>
-                  <th className="w-36 px-2 py-2">사외AS내용</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    회수일
-                  </th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    원인분석일자
-                  </th>
-                  <th className="min-w-[13rem] w-[13rem] px-2 py-2">
-                    불량현상
-                  </th>
-                  <th className="min-w-[13rem] w-[13rem] px-2 py-2">
-                    불량원인분석
-                  </th>
-                  <th className="min-w-[13rem] w-[13rem] px-2 py-2">
-                    재발방지대책
-                  </th>
-                  <th className="w-44 px-2 py-2">회수품처리내용</th>
-                  <th className="w-[11rem] max-w-[11rem] px-2 py-2">댓글</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forms.map((f) => {
-                  const row = complaintListRow(f.data, f.title);
-                  const productLabel =
-                    row.productName != null &&
-                    String(row.productName).trim() !== ""
-                      ? String(row.productName)
-                      : "—";
-                  const deptLabel =
-                    row.departmentAndOwner != null &&
-                    String(row.departmentAndOwner).trim() !== ""
-                      ? String(row.departmentAndOwner)
-                      : "—";
-                  const customerLabel = row.customerInfo;
-                  return (
-                    <tr key={f.id} className="hover:bg-zinc-50">
-                      <NoCell href={`/forms/${f.id}`} no={String(row.no)} />
-                      <ListCell dateColumn>
-                        {formatListDate(row.receiptDate)}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          customerLabel !== "—" ? customerLabel : undefined
-                        }
-                      >
-                        {customerLabel}
-                      </ListCell>
-                      <ListCell title={productLabel !== "—" ? productLabel : undefined}>
-                        {productLabel}
-                      </ListCell>
-                      <ListCell title={deptLabel !== "—" ? deptLabel : undefined}>
-                        {deptLabel}
-                      </ListCell>
-                      <ListCell
-                        title={row.content !== "—" ? row.content : undefined}
-                      >
-                        {row.content}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.actionContent !== "—"
-                            ? row.actionContent
-                            : undefined
-                        }
-                      >
-                        {row.actionContent}
-                      </ListCell>
-                      <ListCell
-                        compact
-                        title={
-                          row.outsideAsDateAndExecutor !== "—"
-                            ? row.outsideAsDateAndExecutor
-                            : undefined
-                        }
-                      >
-                        {row.outsideAsDateAndExecutor}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.outsideAsContent !== "—"
-                            ? row.outsideAsContent
-                            : undefined
-                        }
-                      >
-                        {row.outsideAsContent}
-                      </ListCell>
-                      <ListCell>{formatListDate(row.recoveryDate)}</ListCell>
-                      <ListCell>
-                        {formatListDate(row.causeAnalysisDate)}
-                      </ListCell>
-                      <ListCell
-                        wide
-                        title={
-                          row.defectPhenomenon !== "—"
-                            ? row.defectPhenomenon
-                            : undefined
-                        }
-                      >
-                        {row.defectPhenomenon}
-                      </ListCell>
-                      <ListCell
-                        wide
-                        title={
-                          row.defectCauseAnalysis !== "—"
-                            ? row.defectCauseAnalysis
-                            : undefined
-                        }
-                      >
-                        {row.defectCauseAnalysis}
-                      </ListCell>
-                      <ListCell
-                        wide
-                        title={
-                          row.recurrencePrevention !== "—"
-                            ? row.recurrencePrevention
-                            : undefined
-                        }
-                      >
-                        {row.recurrencePrevention}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.recoveryHandlingContent !== "—"
-                            ? row.recoveryHandlingContent
-                            : undefined
-                        }
-                      >
-                        {row.recoveryHandlingContent}
-                      </ListCell>
-                      <CommentCell
-                        latest={f.events[0]}
-                        totalCount={commentCountMap.get(f.id) ?? 0}
-                      />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ComplaintFormsTable rows={complaintRows} />
         ) : isQualityImprovementList ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1390px] table-fixed border-collapse text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                <tr>
-                  <th className="w-14 whitespace-nowrap px-2 py-2">NO</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    작성일
-                  </th>
-                  <th className="w-24 whitespace-nowrap px-2 py-2">작성자</th>
-                  <th className="w-36 px-2 py-2">의뢰품명/사양</th>
-                  <th className="w-36 px-2 py-2">의뢰사유</th>
-                  <th className="w-32 px-2 py-2">검토부서/담당자</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    검토일자
-                  </th>
-                  <th className="w-44 px-2 py-2">검토(개선)처리 내용</th>
-                  <th className="w-40 px-2 py-2">의뢰자확인내용</th>
-                  <th className="w-[11rem] max-w-[11rem] px-2 py-2">댓글</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forms.map((f) => {
-                  const authorLabel = listAuthorFromFormJson(
-                    f.data,
-                    "QUALITY_IMPROVEMENT",
-                    f.createdBy.name
-                  );
-                  const row = qualityImprovementListRow(f.data, f.title);
-                  return (
-                    <tr key={f.id} className="hover:bg-zinc-50">
-                      <NoCell href={`/forms/${f.id}`} no={String(row.no)} />
-                      <ListCell>{formatListDate(f.createdAt)}</ListCell>
-                      <ListCell title={authorLabel}>{authorLabel}</ListCell>
-                      <ListCell
-                        title={
-                          row.itemSpec !== "—" ? row.itemSpec : undefined
-                        }
-                      >
-                        {row.itemSpec}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.requestReason !== "—"
-                            ? row.requestReason
-                            : undefined
-                        }
-                      >
-                        {row.requestReason}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.reviewDeptOwner !== "—"
-                            ? row.reviewDeptOwner
-                            : undefined
-                        }
-                      >
-                        {row.reviewDeptOwner}
-                      </ListCell>
-                      <ListCell>{formatListDate(row.reviewDate)}</ListCell>
-                      <ListCell
-                        title={
-                          row.improvementContent !== "—"
-                            ? row.improvementContent
-                            : undefined
-                        }
-                      >
-                        {row.improvementContent}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.requesterConfirmContent !== "—"
-                            ? row.requesterConfirmContent
-                            : undefined
-                        }
-                      >
-                        {row.requesterConfirmContent}
-                      </ListCell>
-                      <CommentCell
-                        latest={f.events[0]}
-                        totalCount={commentCountMap.get(f.id) ?? 0}
-                      />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ReviewProcessFilterFormsTable
+            storageKey={QUALITY_IMPROVEMENT_LIST_STORAGE_KEY}
+            columns={QUALITY_IMPROVEMENT_LIST_COLUMNS}
+            rows={qualityRows}
+            filterTitle="미검토"
+            filterHint="(검토일자 없음)"
+          />
         ) : isAbnormalList ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1550px] table-fixed border-collapse text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                <tr>
-                  <th className="w-14 whitespace-nowrap px-2 py-2">NO</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    작성일
-                  </th>
-                  <th className="w-24 whitespace-nowrap px-2 py-2">작성자</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    신고일자
-                  </th>
-                  <th className="w-36 px-2 py-2">이상발생품명/사양</th>
-                  <th className="w-40 px-2 py-2">
-                    문제점 및 이상현상/요구사항
-                  </th>
-                  <th className="w-32 px-2 py-2">처리부서/담당자</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    처리일자
-                  </th>
-                  <th className="w-44 px-2 py-2">
-                    원인 및 시정조치/예방
-                  </th>
-                  <th className="w-36 px-2 py-2">신고자확인내용</th>
-                  <th className="w-[11rem] max-w-[11rem] px-2 py-2">댓글</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forms.map((f) => {
-                  const authorLabel = listAuthorFromFormJson(
-                    f.data,
-                    "ABNORMAL_REPORT",
-                    f.createdBy.name
-                  );
-                  const row = abLikeListRow(f.data, f.title, "ABNORMAL_REPORT");
-                  return (
-                    <tr key={f.id} className="hover:bg-zinc-50">
-                      <NoCell href={`/forms/${f.id}`} no={String(row.no)} />
-                      <ListCell>{formatListDate(f.createdAt)}</ListCell>
-                      <ListCell title={authorLabel}>{authorLabel}</ListCell>
-                      <ListCell>{formatListDate(row.reportDate)}</ListCell>
-                      <ListCell
-                        title={row.itemSpec !== "—" ? row.itemSpec : undefined}
-                      >
-                        {row.itemSpec}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.problemAndRequest !== "—"
-                            ? row.problemAndRequest
-                            : undefined
-                        }
-                      >
-                        {row.problemAndRequest}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.handlingDeptOwner !== "—"
-                            ? row.handlingDeptOwner
-                            : undefined
-                        }
-                      >
-                        {row.handlingDeptOwner}
-                      </ListCell>
-                      <ListCell>{formatListDate(row.handlingDate)}</ListCell>
-                      <ListCell
-                        title={
-                          row.causeAndAction !== "—"
-                            ? row.causeAndAction
-                            : undefined
-                        }
-                      >
-                        {row.causeAndAction}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.reporterConfirmContent !== "—"
-                            ? row.reporterConfirmContent
-                            : undefined
-                        }
-                      >
-                        {row.reporterConfirmContent}
-                      </ListCell>
-                      <CommentCell
-                        latest={f.events[0]}
-                        totalCount={commentCountMap.get(f.id) ?? 0}
-                      />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ReviewProcessFilterFormsTable
+            storageKey={ABNORMAL_REPORT_LIST_STORAGE_KEY}
+            columns={ABNORMAL_REPORT_LIST_COLUMNS}
+            rows={abnormalRows}
+            filterTitle="미처리"
+            filterHint="(처리일자 없음)"
+          />
         ) : isWorkCoopList ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1550px] table-fixed border-collapse text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                <tr>
-                  <th className="w-14 whitespace-nowrap px-2 py-2">NO</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    작성일
-                  </th>
-                  <th className="w-24 whitespace-nowrap px-2 py-2">작성자</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    요청일자
-                  </th>
-                  <th className="w-36 px-2 py-2">요청품목/사양</th>
-                  <th className="w-40 px-2 py-2">협조요청내용 및 사유</th>
-                  <th className="w-32 px-2 py-2">수신부서/담당자</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    처리일자
-                  </th>
-                  <th className="w-44 px-2 py-2">업무협조 처리내용</th>
-                  <th className="w-36 px-2 py-2">요청자확인내용</th>
-                  <th className="w-[11rem] max-w-[11rem] px-2 py-2">댓글</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forms.map((f) => {
-                  const authorLabel = listAuthorFromFormJson(
-                    f.data,
-                    "WORK_COOP",
-                    f.createdBy.name
-                  );
-                  const row = abLikeListRow(f.data, f.title, "WORK_COOP");
-                  return (
-                    <tr key={f.id} className="hover:bg-zinc-50">
-                      <NoCell href={`/forms/${f.id}`} no={String(row.no)} />
-                      <ListCell>{formatListDate(f.createdAt)}</ListCell>
-                      <ListCell title={authorLabel}>{authorLabel}</ListCell>
-                      <ListCell>{formatListDate(row.reportDate)}</ListCell>
-                      <ListCell
-                        title={row.itemSpec !== "—" ? row.itemSpec : undefined}
-                      >
-                        {row.itemSpec}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.problemAndRequest !== "—"
-                            ? row.problemAndRequest
-                            : undefined
-                        }
-                      >
-                        {row.problemAndRequest}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.handlingDeptOwner !== "—"
-                            ? row.handlingDeptOwner
-                            : undefined
-                        }
-                      >
-                        {row.handlingDeptOwner}
-                      </ListCell>
-                      <ListCell>{formatListDate(row.handlingDate)}</ListCell>
-                      <ListCell
-                        title={
-                          row.causeAndAction !== "—"
-                            ? row.causeAndAction
-                            : undefined
-                        }
-                      >
-                        {row.causeAndAction}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.reporterConfirmContent !== "—"
-                            ? row.reporterConfirmContent
-                            : undefined
-                        }
-                      >
-                        {row.reporterConfirmContent}
-                      </ListCell>
-                      <CommentCell
-                        latest={f.events[0]}
-                        totalCount={commentCountMap.get(f.id) ?? 0}
-                      />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ReviewProcessFilterFormsTable
+            storageKey={WORK_COOP_LIST_STORAGE_KEY}
+            columns={WORK_COOP_LIST_COLUMNS}
+            rows={workCoopRows}
+            filterTitle="미처리"
+            filterHint="(처리일자 없음)"
+          />
         ) : isSuggestionList ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1650px] table-fixed border-collapse text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                <tr>
-                  <th className="w-14 whitespace-nowrap px-2 py-2">NO</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    작성일
-                  </th>
-                  <th className="w-24 whitespace-nowrap px-2 py-2">작성자</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    제안일자
-                  </th>
-                  <th className="w-40 px-2 py-2">제안내용</th>
-                  <th className="w-36 px-2 py-2">제안효과</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    심사일
-                  </th>
-                  <th className="w-40 px-2 py-2">심사자 Comment 등</th>
-                  <th className="w-[5.5rem] whitespace-nowrap px-2 py-2">
-                    처리(예정)일자
-                  </th>
-                  <th className="w-40 px-2 py-2">처리내용</th>
-                  <th className="w-[11rem] max-w-[11rem] px-2 py-2">댓글</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forms.map((f) => {
-                  const authorLabel = listAuthorFromFormJson(
-                    f.data,
-                    "SUGGESTION",
-                    f.createdBy.name
-                  );
-                  const row = suggestionListRow(f.data, f.title);
-                  return (
-                    <tr key={f.id} className="hover:bg-zinc-50">
-                      <NoCell href={`/forms/${f.id}`} no={String(row.no)} />
-                      <ListCell>{formatListDate(f.createdAt)}</ListCell>
-                      <ListCell title={authorLabel}>{authorLabel}</ListCell>
-                      <ListCell>
-                        {formatListDate(row.proposalDate)}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.proposalContent !== "—"
-                            ? row.proposalContent
-                            : undefined
-                        }
-                      >
-                        {row.proposalContent}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.proposalEffect !== "—"
-                            ? row.proposalEffect
-                            : undefined
-                        }
-                      >
-                        {row.proposalEffect}
-                      </ListCell>
-                      <ListCell>{formatListDate(row.reviewDate)}</ListCell>
-                      <ListCell
-                        title={
-                          row.reviewerComment !== "—"
-                            ? row.reviewerComment
-                            : undefined
-                        }
-                      >
-                        {row.reviewerComment}
-                      </ListCell>
-                      <ListCell>
-                        {formatListDate(row.processingPlannedDate)}
-                      </ListCell>
-                      <ListCell
-                        title={
-                          row.processingContent !== "—"
-                            ? row.processingContent
-                            : undefined
-                        }
-                      >
-                        {row.processingContent}
-                      </ListCell>
-                      <CommentCell
-                        latest={f.events[0]}
-                        totalCount={commentCountMap.get(f.id) ?? 0}
-                      />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ReviewProcessFilterFormsTable
+            storageKey={SUGGESTION_LIST_STORAGE_KEY}
+            columns={SUGGESTION_LIST_COLUMNS}
+            rows={suggestionRows}
+            filterTitle="미처리"
+            filterHint="(처리(예정)일자 없음)"
+          />
         ) : (
           <ul className="divide-y divide-zinc-100">
             {forms.map((f) => {

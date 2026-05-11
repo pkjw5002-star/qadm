@@ -31,3 +31,27 @@ export async function addFormCommentAction(formData: FormData) {
   redirect(`/forms/${formId}`);
 }
 
+export async function deleteFormAction(formData: FormData) {
+  const user = await requireUser();
+
+  const formId = String(formData.get("formId") ?? "").trim();
+  if (!formId) {
+    redirect("/forms");
+  }
+
+  if (user.role !== "ADMIN") {
+    redirect(`/forms/${formId}`);
+  }
+
+  const existing = await prisma.form.findUnique({ where: { id: formId } });
+  if (!existing) {
+    redirect("/forms");
+  }
+
+  await prisma.form.delete({ where: { id: formId } });
+
+  revalidatePath("/forms");
+  revalidatePath(`/forms/${formId}`);
+  redirect("/forms");
+}
+

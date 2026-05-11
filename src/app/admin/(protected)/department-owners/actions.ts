@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
 const LabelSchema = z.object({
   label: z.string().min(1).max(100),
@@ -14,13 +14,13 @@ const IdSchema = z.object({
 });
 
 export async function addDepartmentOwnerOptionAction(formData: FormData) {
-  await requireUser();
+  await requireAdmin();
 
   const parsed = LabelSchema.safeParse({
     label: String(formData.get("label") ?? "").trim(),
   });
   if (!parsed.success) {
-    redirect("/forms/settings/department-owners?error=empty");
+    redirect("/admin/department-owners?error=empty");
   }
 
   await prisma.departmentOwnerOption.upsert({
@@ -29,22 +29,22 @@ export async function addDepartmentOwnerOptionAction(formData: FormData) {
     update: {},
   });
 
-  redirect("/forms/settings/department-owners");
+  redirect("/admin/department-owners");
 }
 
 export async function deleteDepartmentOwnerOptionAction(formData: FormData) {
-  await requireUser();
+  await requireAdmin();
 
   const parsed = IdSchema.safeParse({
     id: String(formData.get("id") ?? ""),
   });
   if (!parsed.success) {
-    redirect("/forms/settings/department-owners?error=id");
+    redirect("/admin/department-owners?error=id");
   }
 
   await prisma.departmentOwnerOption.delete({
     where: { id: parsed.data.id },
   });
 
-  redirect("/forms/settings/department-owners");
+  redirect("/admin/department-owners");
 }

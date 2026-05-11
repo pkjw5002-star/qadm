@@ -65,12 +65,23 @@ export default function LoginPage() {
           ) : null}
         </form>
 
-        <div className="mt-6 text-sm text-zinc-600">
-          최초 1회 관리자 계정 생성이 필요하면{" "}
-          <Link className="font-medium text-zinc-900 underline" href="/setup">
-            설정 페이지
-          </Link>
-          로 이동하세요.
+        <div className="mt-6 space-y-2 text-sm text-zinc-600">
+          <p>
+            <Link
+              className="font-medium text-zinc-900 underline"
+              href="/admin/login"
+            >
+              관리자 로그인
+            </Link>
+            은 별도 화면에서 진행합니다.
+          </p>
+          <p>
+            최초 1회 관리자 계정 생성이 필요하면{" "}
+            <Link className="font-medium text-zinc-900 underline" href="/setup">
+              설정 페이지
+            </Link>
+            로 이동하세요.
+          </p>
         </div>
       </div>
     </div>

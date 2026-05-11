@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -33,6 +33,7 @@ export default function NewFormClient({
   nextWorkCoopNo,
   nextSuggestionNo,
   currentUserName,
+  canManageDepartmentOwners = false,
   editFormId,
   editType,
   defaults,
@@ -45,6 +46,8 @@ export default function NewFormClient({
   nextWorkCoopNo?: string;
   nextSuggestionNo?: string;
   currentUserName: string;
+  /** 관리자만 부서/담당자 설정 화면으로 안내 */
+  canManageDepartmentOwners?: boolean;
   editFormId?: string;
   editType?: FormTypeKey;
   defaults?:
@@ -67,6 +70,26 @@ export default function NewFormClient({
   const isSuggestion = type === "SUGGESTION";
   const isAbLike = isAbnormalReport || isWorkCoop;
   const [complaintTab, setComplaintTab] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  useEffect(() => {
+    if (!editFormId || type !== "COMPLAINT") return;
+    const raw = window.location.hash.replace(/^#/, "");
+    if (
+      raw !== "complaint-prod-defect" &&
+      raw !== "complaint-prod-cause"
+    ) {
+      return;
+    }
+    requestAnimationFrame(() => setComplaintTab(3));
+    const run = () => {
+      const el = document.getElementById(raw);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (el instanceof HTMLTextAreaElement) {
+        el.focus({ preventScroll: true });
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  }, [editFormId, type]);
   const [qiTab, setQiTab] = useState<1 | 2 | 3>(1);
   const [sgTab, setSgTab] = useState<1 | 2>(1);
   const [abTab, setAbTab] = useState<1 | 2 | 3>(1);
@@ -157,17 +180,19 @@ export default function NewFormClient({
           <h1 className="text-lg font-semibold tracking-tight">
             {editFormId
               ? `${FORM_TYPE_LABEL[type]} 수정`
-              : "새 서식 작성"}
+              : FORM_TYPE_LABEL[type]}
           </h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            {isComplaint
-              ? "불만신고서: 「1. 접수」필수 항목만으로 제출할 수 있습니다. 「2~5」탭은 비워 두어도 되며, 작성한 탭의 내용만 저장됩니다."
-              : isAbLike
-                ? "「1」탭 필수 항목만으로 제출할 수 있습니다. 「2·3」탭은 비워 두어도 되며, 작성한 탭의 내용만 저장됩니다."
-              : isSuggestion
-                ? "「1. 제안서」필수 항목으로 제출할 수 있습니다. 「2. 심사결과서」는 비워 두어도 되며, 작성 시 심사일이 필요합니다."
-              : "MVP 단계라 공통 필드(요약/상세) 위주로 저장합니다."}
-          </p>
+          {isComplaint ||
+          isQualityImprovement ||
+          isAbLike ||
+          isSuggestion ? (
+            <p className="mt-1 text-xs text-zinc-500">
+              <span className="text-red-600" aria-hidden="true">
+                *
+              </span>{" "}
+              표시는 필수 입력입니다. 저장 시 비어 있는 항목은 아래에 안내됩니다.
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {editFormId ? (
@@ -184,10 +209,15 @@ export default function NewFormClient({
         </div>
       </div>
 
-      {/* 불만신고서: 숨겨진 탭의 required가 브라우저 제출을 막을 수 있어 noValidate 후 서버(Zod) 검증 */}
+      {/* 탭으로 숨긴 패널에도 required가 있으면 브라우저 기본 검증이 막을 수 있어 noValidate 후 서버(Zod) 검증 */}
       <form
         action={action}
-        noValidate={isComplaint || isSuggestion}
+        noValidate={
+          isComplaint ||
+          isQualityImprovement ||
+          isAbLike ||
+          isSuggestion
+        }
         className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
       >
         {editFormId ? (
@@ -342,6 +372,10 @@ export default function NewFormClient({
                     <label className="block min-w-0">
                       <span className="text-xs font-medium text-zinc-800 sm:text-sm">
                         일자
+                        <span className="text-red-600" aria-hidden="true">
+                          {" "}
+                          *
+                        </span>
                       </span>
                       <input
                         name="receiptDate"
@@ -357,6 +391,10 @@ export default function NewFormClient({
                     <label className="block min-w-0">
                       <span className="text-xs font-medium text-zinc-800 sm:text-sm">
                         불만신고 제품명
+                        <span className="text-red-600" aria-hidden="true">
+                          {" "}
+                          *
+                        </span>
                       </span>
                       <input
                         name="complaintProductName"
@@ -372,16 +410,26 @@ export default function NewFormClient({
                     <label className="block min-w-0">
                       <span className="text-xs font-medium text-zinc-800 sm:text-sm">
                         해당부서 및 담당자
+                        <span className="text-red-600" aria-hidden="true">
+                          {" "}
+                          *
+                        </span>
                       </span>
                       {departmentOwnerOptions.length === 0 ? (
                         <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm">
                           목록 없음.{" "}
-                          <Link
-                            href="/forms/settings/department-owners"
-                            className="font-medium underline"
-                          >
-                            설정
-                          </Link>
+                          {canManageDepartmentOwners ? (
+                            <Link
+                              href="/admin/department-owners"
+                              className="font-medium underline"
+                            >
+                              관리자 설정
+                            </Link>
+                          ) : (
+                            <span className="font-medium">
+                              관리자에게 등록을 요청하세요.
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <select
@@ -404,20 +452,33 @@ export default function NewFormClient({
                     </label>
                   </div>
                   <p className="mt-1.5 text-xs text-zinc-500">
-                    부서/담당자 항목 추가·삭제는{" "}
-                    <Link
-                      href="/forms/settings/department-owners"
-                      className="font-medium text-zinc-700 underline"
-                    >
-                      설정
-                    </Link>
-                    에서 할 수 있습니다.
+                    {canManageDepartmentOwners ? (
+                      <>
+                        부서/담당자 항목 추가·삭제는{" "}
+                        <Link
+                          href="/admin/department-owners"
+                          className="font-medium text-zinc-700 underline"
+                        >
+                          관리자 설정
+                        </Link>
+                        에서 할 수 있습니다.
+                      </>
+                    ) : (
+                      <>
+                        부서/담당자 목록은 관리자가 설정합니다. 변경이 필요하면
+                        관리자에게 요청하세요.
+                      </>
+                    )}
                   </p>
                 </div>
 
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
                     고객정보 (업체/고객명/연락처)
+                    <span className="text-red-600" aria-hidden="true">
+                      {" "}
+                      *
+                    </span>
                   </span>
                   <input
                     name="customerInfo"
@@ -431,6 +492,10 @@ export default function NewFormClient({
               <label className="block">
                 <span className="text-sm font-medium text-zinc-800">
                   세부품명 및 불만신고내용
+                  <span className="text-red-600" aria-hidden="true">
+                    {" "}
+                    *
+                  </span>
                 </span>
                 <textarea
                   name="productAndComplaint"
@@ -445,6 +510,10 @@ export default function NewFormClient({
               <label className="block">
                 <span className="text-sm font-medium text-zinc-800">
                   불만제품 제조번호 / 제조일자 / 작업자
+                  <span className="text-red-600" aria-hidden="true">
+                    {" "}
+                    *
+                  </span>
                 </span>
                 <input
                   name="productManufacturing"
@@ -646,6 +715,7 @@ export default function NewFormClient({
                     회수품 동작 · 외관 등 불량현상
                   </span>
                   <textarea
+                    id="complaint-prod-defect"
                     name="prodRecoveredOperationAppearance"
                     rows={5}
                     defaultValue={complaintBase.prodRecoveredOperationAppearance ?? ""}
@@ -659,6 +729,7 @@ export default function NewFormClient({
                     불량 원인분석
                   </span>
                   <textarea
+                    id="complaint-prod-cause"
                     name="prodDefectCauseAnalysis"
                     rows={4}
                     defaultValue={complaintBase.prodDefectCauseAnalysis ?? ""}
@@ -930,6 +1001,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
                       일자
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="qiReceiptDate"
@@ -944,6 +1019,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
                       작성자
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="qiWriterName"
@@ -958,6 +1037,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-5">
                     <span className="text-sm font-medium text-zinc-800">
                       의뢰품명/사양
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="qiItemSpec"
@@ -972,6 +1055,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
                       검토부서/담당자
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="qiReviewDepartmentOwner"
@@ -988,6 +1075,10 @@ export default function NewFormClient({
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
                     의뢰사유 및 세부 의뢰내용
+                    <span className="text-red-600" aria-hidden="true">
+                      {" "}
+                      *
+                    </span>
                   </span>
                   <textarea
                     name="qiRequestReasonDetails"
@@ -1162,6 +1253,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
                       작성일자
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="sgProposalDate"
@@ -1176,6 +1271,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
                       작성자
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="sgWriterName"
@@ -1192,6 +1291,10 @@ export default function NewFormClient({
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
                     제안내용
+                    <span className="text-red-600" aria-hidden="true">
+                      {" "}
+                      *
+                    </span>
                   </span>
                   <textarea
                     name="sgProposalContent"
@@ -1236,6 +1339,10 @@ export default function NewFormClient({
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
                     제안효과
+                    <span className="text-red-600" aria-hidden="true">
+                      {" "}
+                      *
+                    </span>
                   </span>
                   <textarea
                     name="sgProposalEffect"
@@ -1376,6 +1483,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
                       {isWorkCoop ? "요청일자" : "신고일자"}
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="abReportDate"
@@ -1390,6 +1501,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
                       작성자
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="abWriterName"
@@ -1404,6 +1519,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-5">
                     <span className="text-sm font-medium text-zinc-800">
                       {isWorkCoop ? "요청품목/사양" : "이상발생품명/사양"}
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="abItemSpec"
@@ -1418,6 +1537,10 @@ export default function NewFormClient({
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
                       {isWorkCoop ? "수신부서/담당자" : "처리부서/담당자"}
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
                     </span>
                     <input
                       name="abHandlingDepartmentOwner"
@@ -1436,6 +1559,10 @@ export default function NewFormClient({
                     {isWorkCoop
                       ? "협조요청내용 및 사유"
                       : "문제점 및 이상현상/요구사항"}
+                    <span className="text-red-600" aria-hidden="true">
+                      {" "}
+                      *
+                    </span>
                   </span>
                   <textarea
                     name="abProblemAndRequest"

@@ -11,7 +11,7 @@ const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
-export async function loginAction(_: unknown, formData: FormData) {
+export async function adminLoginAction(_: unknown, formData: FormData) {
   const parsed = LoginSchema.safeParse({
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
@@ -25,6 +25,13 @@ export async function loginAction(_: unknown, formData: FormData) {
   });
   if (!user) return { ok: false as const, message: "계정을 찾을 수 없어요." };
 
+  if (user.role !== "ADMIN") {
+    return {
+      ok: false as const,
+      message: "관리자 계정만 이 화면에서 로그인할 수 있습니다.",
+    };
+  }
+
   const ok = await verifyPassword(parsed.data.password, user.passwordHash);
   if (!ok) return { ok: false as const, message: "이메일/비밀번호가 틀렸어요." };
 
@@ -32,6 +39,5 @@ export async function loginAction(_: unknown, formData: FormData) {
   session.userId = user.id;
   await session.save();
 
-  redirect(user.role === "ADMIN" ? "/admin" : "/forms");
+  redirect("/admin");
 }
-
