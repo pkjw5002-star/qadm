@@ -322,6 +322,7 @@ function suggestionListRow(data: unknown, title: string) {
       reviewResult?: {
         reviewDate?: unknown;
         reviewerCommentLine?: unknown;
+        processingHandler?: unknown;
         processingPlannedDate?: unknown;
         processingContent?: unknown;
       };
@@ -343,6 +344,7 @@ function suggestionListRow(data: unknown, title: string) {
     proposalEffect: textOrDash(p?.effect),
     reviewDate: rr?.reviewDate,
     reviewerComment: textOrDash(rr?.reviewerCommentLine),
+    processingHandler: textOrDash(rr?.processingHandler),
     processingPlannedDate: rr?.processingPlannedDate,
     processingContent: textOrDash(rr?.processingContent),
   };
@@ -668,6 +670,7 @@ export default async function FormsPage({
               proposalEffect: row.proposalEffect,
               reviewDate: formatListDate(row.reviewDate),
               reviewerComment: row.reviewerComment,
+              processingHandler: row.processingHandler,
               processingPlannedDate: formatListDate(
                 row.processingPlannedDate
               ),

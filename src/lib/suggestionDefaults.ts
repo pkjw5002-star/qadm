@@ -8,6 +8,7 @@ export type SuggestionDefaults = Partial<{
 
   sgReviewDate: string;
   sgReviewerComment: string;
+  sgProcessingHandler: string;
   sgProcessingPlannedDate: string;
   sgProcessingContent: string;
   sgProcessingPhotoUrlDirect: string;
@@ -58,6 +59,10 @@ export function suggestionJsonToDefaults(data: unknown): SuggestionDefaults {
     sgReviewerComment:
       review?.reviewerCommentLine != null
         ? String(review.reviewerCommentLine)
+        : "",
+    sgProcessingHandler:
+      review?.processingHandler != null
+        ? String(review.processingHandler)
         : "",
     sgProcessingPlannedDate: dateInput(review?.processingPlannedDate),
     sgProcessingContent:

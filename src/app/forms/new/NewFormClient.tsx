@@ -1385,17 +1385,32 @@ export default function NewFormClient({
                   </label>
                 </div>
 
-                <label className="block">
-                  <span className="text-sm font-medium text-zinc-800">
-                    처리(예정)일자
-                  </span>
-                  <input
-                    name="sgProcessingPlannedDate"
-                    type="date"
-                    defaultValue={sgBase.sgProcessingPlannedDate ?? ""}
-                    className="mt-1 w-full max-w-xs rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                  />
-                </label>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
+                  <label className="block min-w-0 md:col-span-2">
+                    <span className="text-sm font-medium text-zinc-800">
+                      처리자
+                    </span>
+                    <input
+                      name="sgProcessingHandler"
+                      type="text"
+                      defaultValue={sgBase.sgProcessingHandler ?? ""}
+                      className="mt-1 w-full max-w-[12rem] rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
+                      placeholder="이름"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="block min-w-0 md:col-span-3">
+                    <span className="text-sm font-medium text-zinc-800">
+                      처리(예정)일자
+                    </span>
+                    <input
+                      name="sgProcessingPlannedDate"
+                      type="date"
+                      defaultValue={sgBase.sgProcessingPlannedDate ?? ""}
+                      className="mt-1 w-full max-w-xs rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
+                    />
+                  </label>
+                </div>
 
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">

@@ -182,6 +182,7 @@ export default async function FormDetailPage({
       reviewResult?: {
         reviewDate?: unknown;
         reviewerCommentLine?: unknown;
+        processingHandler?: unknown;
         processingPlannedDate?: unknown;
         processingContent?: unknown;
         photoAttachment?: { uploadedUrl?: string; externalUrl?: string };
@@ -816,6 +817,16 @@ export default async function FormDetailPage({
                       />
                       <InfoRow
                         columns={[
+                          {
+                            label: "처리자",
+                            value:
+                              sg.reviewResult.processingHandler != null &&
+                              String(sg.reviewResult.processingHandler).trim() !==
+                                ""
+                                ? String(sg.reviewResult.processingHandler)
+                                : "—",
+                            flex: "flex-1",
+                          },
                           {
                             label: "처리(예정)일자",
                             value: formatKoreanDateCompact(

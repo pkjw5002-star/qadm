@@ -61,6 +61,7 @@ const FORM_FIELD_LABEL_KO: Record<string, string> = {
   sgProposalEffect: "제안효과",
   sgReviewDate: "심사일",
   sgReviewerComment: "심사자 Comment 등",
+  sgProcessingHandler: "처리자",
   sgProcessingPlannedDate: "처리(예정)일자",
   sgProcessingContent: "처리내용",
 };
@@ -378,12 +379,14 @@ const SuggestionSchema = z
     /** 2. 심사결과서 — 선택 */
     sgReviewDate: optionalTrimmedNonEmpty,
     sgReviewerComment: optionalTrimmedNonEmpty,
+    sgProcessingHandler: optionalTrimmedNonEmpty,
     sgProcessingPlannedDate: optionalTrimmedNonEmpty,
     sgProcessingContent: optionalTrimmedNonEmpty,
   })
   .superRefine((d, ctx) => {
     const hasReviewText =
       Boolean(d.sgReviewerComment) ||
+      Boolean(d.sgProcessingHandler) ||
       Boolean(d.sgProcessingPlannedDate) ||
       Boolean(d.sgProcessingContent);
     if (hasReviewText && !d.sgReviewDate) {
@@ -586,6 +589,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     sgProposalEffect: String(formData.get("sgProposalEffect") ?? ""),
     sgReviewDate: String(formData.get("sgReviewDate") ?? ""),
     sgReviewerComment: String(formData.get("sgReviewerComment") ?? ""),
+    sgProcessingHandler: String(formData.get("sgProcessingHandler") ?? ""),
     sgProcessingPlannedDate: String(
       formData.get("sgProcessingPlannedDate") ?? ""
     ),
@@ -865,6 +869,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
 
     const hasReviewResult = Boolean(
       String(d.sgReviewerComment ?? "").trim() ||
+        String(d.sgProcessingHandler ?? "").trim() ||
         String(d.sgProcessingPlannedDate ?? "").trim() ||
         String(d.sgProcessingContent ?? "").trim() ||
         photos.processingPhoto
@@ -890,6 +895,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
             ? {
                 reviewDate: String(d.sgReviewDate).trim(),
                 reviewerCommentLine: d.sgReviewerComment ?? "",
+                processingHandler: d.sgProcessingHandler ?? "",
                 processingPlannedDate: d.sgProcessingPlannedDate ?? "",
                 processingContent: d.sgProcessingContent ?? "",
                 ...(photos.processingPhoto
@@ -1442,6 +1448,7 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
     sgProposalEffect: String(formData.get("sgProposalEffect") ?? ""),
     sgReviewDate: String(formData.get("sgReviewDate") ?? ""),
     sgReviewerComment: String(formData.get("sgReviewerComment") ?? ""),
+    sgProcessingHandler: String(formData.get("sgProcessingHandler") ?? ""),
     sgProcessingPlannedDate: String(
       formData.get("sgProcessingPlannedDate") ?? ""
     ),
@@ -1489,6 +1496,7 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
 
   const hasReviewResult = Boolean(
     String(d.sgReviewerComment ?? "").trim() ||
+      String(d.sgProcessingHandler ?? "").trim() ||
       String(d.sgProcessingPlannedDate ?? "").trim() ||
       String(d.sgProcessingContent ?? "").trim() ||
       processingPhoto
@@ -1509,6 +1517,7 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
           ? {
               reviewDate: String(d.sgReviewDate).trim(),
               reviewerCommentLine: d.sgReviewerComment ?? "",
+              processingHandler: d.sgProcessingHandler ?? "",
               processingPlannedDate: d.sgProcessingPlannedDate ?? "",
               processingContent: d.sgProcessingContent ?? "",
               ...(processingPhoto ? { photoAttachment: processingPhoto } : {}),

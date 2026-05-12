@@ -368,6 +368,13 @@ export const SUGGESTION_LIST_COLUMNS: FormListColumn[] = [
     variant: "text",
   },
   {
+    id: "processingHandler",
+    label: "처리자",
+    defaultWidth: 72,
+    minWidth: 56,
+    variant: "text",
+  },
+  {
     id: "processingPlannedDate",
     label: "처리(예정)일자",
     defaultWidth: 100,
