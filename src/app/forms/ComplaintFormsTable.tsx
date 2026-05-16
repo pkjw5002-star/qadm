@@ -26,6 +26,8 @@ export type ComplaintListRowVm = {
   missingRecoveryDate: boolean;
   /** 회수일 있음·원인분석일자 공란 → 회수 후 미완료 */
   recoveredWithoutCauseAnalysisDate: boolean;
+  /** 원인분석일자 미입력 → 목록에서 파란색 강조 */
+  highlightPending: boolean;
   defectPhenomenon: string;
   defectCauseAnalysis: string;
   recurrencePrevention: string;
@@ -67,6 +69,7 @@ function toFormListRow(row: ComplaintListRowVm): FormListRow {
     },
     commentLine: row.commentLine,
     commentTooltip: row.commentTooltip,
+    highlightPending: row.highlightPending,
   };
 }
 

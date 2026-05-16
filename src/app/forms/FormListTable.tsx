@@ -502,7 +502,16 @@ export default function FormListTable({
                 </td>
               </tr>
             ) : null}
-            {filteredRows.map((row) => (
+            {filteredRows.map((row) => {
+              const hp = row.highlightPending === true;
+              const bodyClass = hp ? "text-blue-600" : "text-zinc-800";
+              const mutedClass = hp ? "text-blue-500" : "text-zinc-500";
+              const strongClass = hp ? "text-blue-700" : "text-zinc-900";
+              const hrefBodyClass = hp
+                ? "text-blue-700 hover:underline"
+                : "text-sky-900 hover:underline";
+
+              return (
               <tr key={row.id} className="hover:bg-zinc-50">
                 {visibleCols.map((id) => {
                   const col = colById.get(id);
@@ -520,7 +529,7 @@ export default function FormListTable({
                         <Link
                           href={`/forms/${row.id}`}
                           title={label !== "—" ? label : undefined}
-                          className="block truncate whitespace-nowrap font-medium text-zinc-900 hover:underline"
+                          className={`block truncate whitespace-nowrap font-medium hover:underline ${strongClass}`}
                         >
                           {label}
                         </Link>
@@ -532,7 +541,7 @@ export default function FormListTable({
                       return (
                         <td
                           key={id}
-                          className="border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug text-zinc-500"
+                          className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${mutedClass}`}
                         >
                           —
                         </td>
@@ -541,7 +550,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className="border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug text-zinc-800"
+                        className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass}`}
                       >
                         <div
                           className="line-clamp-2 break-words whitespace-pre-wrap"
@@ -558,7 +567,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className="border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug text-zinc-800"
+                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass}`}
                       >
                         <div className="truncate whitespace-nowrap" title={tip}>
                           {v}
@@ -570,7 +579,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className="border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug text-zinc-800"
+                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass}`}
                       >
                         <div className="truncate" title={tip}>
                           {v}
@@ -580,7 +589,7 @@ export default function FormListTable({
                   }
                   const t = cellTitle(v !== "—" ? v : undefined, v);
                   const href = row.cellHref?.[id];
-                  const body = (
+                  const textBlock = (
                     <div
                       className="line-clamp-3 break-words whitespace-pre-wrap"
                       title={t}
@@ -591,24 +600,25 @@ export default function FormListTable({
                   return (
                     <td
                       key={id}
-                      className="border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug text-zinc-800"
+                      className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass}`}
                     >
                       {href ? (
                         <Link
                           href={href}
-                          className="block text-sky-900 hover:underline"
+                          className={`block ${hrefBodyClass}`}
                           title={t}
                         >
-                          {body}
+                          {textBlock}
                         </Link>
                       ) : (
-                        body
+                        textBlock
                       )}
                     </td>
                   );
                 })}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

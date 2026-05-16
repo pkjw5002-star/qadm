@@ -273,6 +273,7 @@ type AbLikeJson = {
   };
   handlingReport?: {
     date?: unknown;
+    plannedDateReason?: unknown;
     causeAndActionPrevention?: unknown;
   };
   reporterConfirm?: { date?: unknown; content?: unknown };
@@ -305,6 +306,8 @@ function abLikeListRow(
     problemAndRequest: textOrDash(r?.problemAndRequest),
     handlingDeptOwner: textOrDash(r?.handlingDepartmentOwner),
     handlingDate: h?.date,
+    /** 업무협조 처리보고서의 「처리예정일자/사유」— 미처리 강조 판별용 */
+    handlingPlannedDateReason: h?.plannedDateReason,
     causeAndAction: textOrDash(h?.causeAndActionPrevention),
     reporterConfirmContent: textOrDash(c?.content),
   };
@@ -511,6 +514,9 @@ export default async function FormsPage({
         const recoveredWithoutCauseAnalysisDate =
           !missingRecoveryDate &&
           complaintListDateMissing(row.causeAnalysisDate);
+        const highlightPending = complaintListDateMissing(
+          row.causeAnalysisDate
+        );
         return {
           id: f.id,
           no: String(row.no),
@@ -527,6 +533,7 @@ export default async function FormsPage({
           causeAnalysisDate: formatListDate(row.causeAnalysisDate),
           missingRecoveryDate,
           recoveredWithoutCauseAnalysisDate,
+          highlightPending,
           defectPhenomenon: row.defectPhenomenon,
           defectCauseAnalysis: row.defectCauseAnalysis,
           recurrencePrevention: row.recurrencePrevention,
@@ -554,6 +561,7 @@ export default async function FormsPage({
           includeWhenFiltered,
           listRow: {
             id: f.id,
+            highlightPending: includeWhenFiltered,
             cells: {
               no: String(row.no),
               createdAt: formatListDate(f.createdAt),
@@ -589,6 +597,7 @@ export default async function FormsPage({
           includeWhenFiltered,
           listRow: {
             id: f.id,
+            highlightPending: includeWhenFiltered,
             cells: {
               no: String(row.no),
               author: authorLabel,
@@ -619,11 +628,14 @@ export default async function FormsPage({
           f.events[0],
           commentCountMap.get(f.id) ?? 0
         );
-        const includeWhenFiltered = complaintListDateMissing(row.handlingDate);
+        const includeWhenFiltered =
+          complaintListDateMissing(row.handlingDate) ||
+          complaintListDateMissing(row.handlingPlannedDateReason);
         return {
           includeWhenFiltered,
           listRow: {
             id: f.id,
+            highlightPending: includeWhenFiltered,
             cells: {
               no: String(row.no),
               author: authorLabel,
@@ -661,6 +673,7 @@ export default async function FormsPage({
           includeWhenFiltered,
           listRow: {
             id: f.id,
+            highlightPending: includeWhenFiltered,
             cells: {
               no: String(row.no),
               // 제안서: 입력 화면의 "작성일자"를 목록의 "작성일자"로 표시
@@ -737,7 +750,7 @@ export default async function FormsPage({
             columns={WORK_COOP_LIST_COLUMNS}
             rows={workCoopRows}
             filterTitle="미처리"
-            filterHint="(처리일자 없음)"
+            filterHint="(처리일자 또는 처리예정일자·사유 없음)"
           />
         ) : isSuggestionList ? (
           <ReviewProcessFilterFormsTable
