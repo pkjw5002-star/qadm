@@ -7,7 +7,8 @@ Vercel에서 로그인·서식 데이터를 쓰려면 **클라우드 DB**가 필
 1. [https://neon.tech](https://neon.tech) 접속 → GitHub 등으로 가입
 2. **New Project** → 이름 예: `qadm` → 리전 선택(가까운 곳) → Create
 3. 대시보드 **Connection string** → **Prisma** 탭 선택
-4. `postgresql://...` 로 시작하는 문자열 **복사**
+4. `postgresql://...` 로 시작하는 문자열 **복사**  
+   - **Vercel 배포용**이면 **Pooled connection** (호스트에 `-pooler` 포함) 탭을 선택하는 것이 좋습니다. 서버리스에서 더 빠릅니다.
 
 ## 2. 로컬 `.env` 수정
 
