@@ -31,17 +31,26 @@ npx prisma generate
 
 **`P1013` / `file:./dev.db` 오류가 나면:** `.env`는 Neon URL인데 터미널에 예전 `DATABASE_URL=file:./dev.db`가 남은 경우입니다. PowerShell에서 `Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue` 후 다시 실행하거나, 터미널을 새로 열고 `npx prisma migrate deploy`를 실행하세요. (프로젝트는 `prisma.config.ts`에서 `.env`가 우선되도록 설정되어 있습니다.)
 
-## 4. Vercel 환경 변수
+## 4. Vercel 환경 변수 (빌드 실패 방지)
 
 Vercel → 프로젝트 → **Settings** → **Environment Variables**
 
+**Production** 과 **Preview** 둘 다 체크해서 추가하세요.
+
 | 이름 | 값 |
 |------|-----|
-| `DATABASE_URL` | Neon에서 복사한 `postgresql://...` (로컬과 동일해도 됨) |
-| `SESSION_PASSWORD` | `.env`와 동일 |
-| `NEXT_PUBLIC_FIREBASE_*` | `.env.local` 6개 |
+| `DATABASE_URL` | Neon에서 복사한 `postgresql://...` (로컬 `.env`와 동일) |
+| `SESSION_PASSWORD` | `.env`와 동일 (32자 이상) |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | `.env.local` |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `.env.local` |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `.env.local` |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `.env.local` |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `.env.local` |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | `.env.local` |
 
-저장 후 **Redeploy**.
+저장 후 **Deployments → Redeploy**.
+
+`Build Failed` / `prisma migrate deploy` 오류는 대부분 **`DATABASE_URL`이 Vercel에 없을 때** 납니다.
 
 ## 5. 관리자 계정
 
