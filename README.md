@@ -3,7 +3,7 @@
 불만신고서/품질개선의뢰서/이상발생신고서/업무협조전/제안서를 **작성·조회·관리**하는 플랫폼의 MVP입니다.
 
 - **Frontend/Backend**: Next.js (App Router)
-- **DB**: SQLite 로컬 (`dev.db`) / 운영은 PostgreSQL 권장
+- **DB**: PostgreSQL ([Neon](https://neon.tech) 권장) — 설정: [docs/NEON_SETUP.md](docs/NEON_SETUP.md)
 - **ORM**: Prisma
 - **Auth**: iron-session (쿠키 기반 세션)
 - **표 레이아웃(열 너비·숨김)**: Firebase Firestore (`.env.local`의 `NEXT_PUBLIC_FIREBASE_*`)
@@ -47,9 +47,9 @@ npm run dev
 2. **Environment Variables**에 아래를 등록 (Production / Preview 모두)
    - `.env` 내용: `DATABASE_URL`, `SESSION_PASSWORD`
    - `.env.local` 내용: `NEXT_PUBLIC_FIREBASE_*` 전부
-3. **운영 DB**: Vercel 서버리스에서는 SQLite 파일이 유지되지 않습니다. [Neon](https://neon.tech) 등에서 PostgreSQL을 만들고 `DATABASE_URL`을 `postgresql://...`로 설정한 뒤, Prisma를 PostgreSQL용으로 마이그레이션하세요.
-4. **Firebase Firestore**: 콘솔에서 Firestore를 켠 뒤, 저장소 루트의 [`firestore.rules`](firestore.rules)를 Firebase 콘솔에 배포하세요.
-5. Build Command: `npm run build` (기본값)
+3. **운영 DB**: [docs/NEON_SETUP.md](docs/NEON_SETUP.md)대로 Neon `DATABASE_URL`을 Vercel에 등록합니다.
+4. **Firebase Firestore**: 콘솔에서 Firestore를 켠 뒤 [`firestore.rules`](firestore.rules)를 배포합니다.
+5. Build Command: `vercel.json`에 `prisma migrate deploy` 포함됨
 
 ## Next Steps (추천)
 

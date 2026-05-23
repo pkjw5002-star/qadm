@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingExcludes: {
-    '*': ['node_modules/better-sqlite3/**/*'],
-  },
+  serverExternalPackages: ["pg", "@prisma/adapter-pg", "@prisma/client"],
 };
 module.exports = nextConfig;
