@@ -706,7 +706,7 @@ export default async function FormsPage({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+      <div className="rounded-2xl border border-zinc-200 bg-white">
         {!isComplaintList &&
         !isQualityImprovementList &&
         !isAbnormalList &&

@@ -61,12 +61,12 @@ function isNoColumn(col: FormListColumn | undefined): boolean {
 
 function stickyThClass(col: FormListColumn | undefined): string {
   if (!isNoColumn(col)) return "";
-  return `sticky left-0 z-20 bg-zinc-50 ${STICKY_NO_SHADOW}`;
+  return `sticky left-0 z-30 bg-zinc-50 ${STICKY_NO_SHADOW} after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-zinc-200`;
 }
 
 function stickyTdClass(col: FormListColumn | undefined): string {
   if (!isNoColumn(col)) return "";
-  return `sticky left-0 z-10 bg-white ${STICKY_NO_SHADOW} group-hover:bg-zinc-50`;
+  return `sticky left-0 z-20 bg-white ${STICKY_NO_SHADOW} group-hover:bg-zinc-50 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-zinc-100`;
 }
 
 type LayoutState = {
@@ -490,9 +490,9 @@ export default function FormListTable({
         </p>
       ) : null}
 
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto overscroll-x-contain">
         <table
-          className="border-collapse text-sm"
+          className="border-separate border-spacing-0 text-sm"
           style={{
             tableLayout: "fixed",
             width: Math.max(totalWidth, 400),
