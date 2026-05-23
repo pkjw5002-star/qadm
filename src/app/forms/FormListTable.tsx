@@ -9,14 +9,16 @@ import {
   useRef,
   useState,
 } from "react";
+import { useFormsUserId } from "@/app/forms/FormsUserContext";
+import { isFirebaseConfigured } from "@/lib/firebase";
+import {
+  loadFormListLayout,
+  saveFormListLayout,
+  type FormListLayoutPersisted,
+} from "@/lib/formListLayoutStore";
 import type { FormListColumn, FormListRow } from "./formListTableTypes";
 
 export type { FormListColumn, FormListRow } from "./formListTableTypes";
-
-type Persisted = {
-  widths?: Record<string, number>;
-  hidden?: Record<string, boolean>;
-};
 
 function cellTitle(explicit: string | undefined, value: string): string | undefined {
   if (explicit != null && String(explicit).trim() !== "") return explicit;
@@ -25,12 +27,12 @@ function cellTitle(explicit: string | undefined, value: string): string | undefi
   return value;
 }
 
-function loadPersisted(key: string): Persisted {
+function loadLegacyLocalStorage(key: string): FormListLayoutPersisted {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return {};
-    return JSON.parse(raw) as Persisted;
+    return JSON.parse(raw) as FormListLayoutPersisted;
   } catch {
     return {};
   }
@@ -54,6 +56,30 @@ type LayoutState = {
   widths: Record<string, number>;
   hidden: Record<string, boolean>;
 };
+
+function applyPersistedToLayout(
+  p: FormListLayoutPersisted,
+  colIds: readonly string[],
+  defaults: ReturnType<typeof buildDefaults>
+): LayoutState {
+  const widths = { ...defaults.widths };
+  const hidden = { ...defaults.hidden };
+  if (p.widths) {
+    for (const id of colIds) {
+      const w = p.widths[id];
+      if (typeof w === "number" && Number.isFinite(w)) {
+        widths[id] = Math.max(defaults.minWidths[id] ?? 40, w);
+      }
+    }
+  }
+  if (p.hidden) {
+    for (const id of colIds) {
+      if (NON_HIDE.has(id)) continue;
+      if (p.hidden[id] === true) hidden[id] = true;
+    }
+  }
+  return { widths, hidden };
+}
 
 /** 열에 표시·검색에 쓰는 전체 문자열 */
 function searchHaystack(
@@ -95,6 +121,7 @@ export default function FormListTable({
   /** 표 도구줄 왼쪽(예: 불만 전용 필터) */
   leadingToolbar?: ReactNode;
 }) {
+  const userId = useFormsUserId();
   const colIds = useMemo(() => columns.map((c) => c.id), [columns]);
   const colById = useMemo(() => {
     const m = new Map<string, FormListColumn>();
@@ -151,30 +178,47 @@ export default function FormListTable({
   }, [searchOpenColId]);
 
   useEffect(() => {
-    const p = loadPersisted(storageKey);
-    const widths = { ...defaults.widths };
-    const hidden = { ...defaults.hidden };
-    if (p.widths) {
-      for (const id of colIds) {
-        const w = p.widths[id];
-        if (typeof w === "number" && Number.isFinite(w)) {
-          widths[id] = Math.max(defaults.minWidths[id] ?? 40, w);
+    let cancelled = false;
+
+    async function loadLayout() {
+      let p: FormListLayoutPersisted = {};
+      if (userId && isFirebaseConfigured()) {
+        p = await loadFormListLayout(userId, storageKey);
+        if (
+          !p.widths &&
+          !p.hidden &&
+          typeof window !== "undefined"
+        ) {
+          const legacy = loadLegacyLocalStorage(storageKey);
+          if (legacy.widths || legacy.hidden) {
+            p = legacy;
+            void saveFormListLayout(userId, storageKey, legacy);
+            try {
+              localStorage.removeItem(storageKey);
+            } catch {
+              /* ignore */
+            }
+          }
         }
+      } else {
+        p = loadLegacyLocalStorage(storageKey);
       }
+      if (cancelled) return;
+      const next = applyPersistedToLayout(p, colIds, defaults);
+      requestAnimationFrame(() => setLayout(next));
     }
-    if (p.hidden) {
-      for (const id of colIds) {
-        if (NON_HIDE.has(id)) continue;
-        if (p.hidden[id] === true) hidden[id] = true;
-      }
-    }
-    requestAnimationFrame(() => setLayout({ widths, hidden }));
-  }, [storageKey, colIds, defaults]);
+
+    void loadLayout();
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey, colIds, defaults, userId]);
+
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persist = useCallback(
     (w: Record<string, number>, h: Record<string, boolean>) => {
-      if (typeof window === "undefined") return;
-      const payload: Persisted = { widths: {}, hidden: {} };
+      const payload: FormListLayoutPersisted = { widths: {}, hidden: {} };
       for (const id of colIds) {
         if (w[id] !== defaults.widths[id]) {
           payload.widths ??= {};
@@ -185,20 +229,39 @@ export default function FormListTable({
           payload.hidden[id] = true;
         }
       }
-      try {
-        const wKeys = payload.widths ? Object.keys(payload.widths).length : 0;
-        const hKeys = payload.hidden ? Object.keys(payload.hidden).length : 0;
-        if (wKeys === 0 && hKeys === 0) {
-          localStorage.removeItem(storageKey);
-        } else {
-          localStorage.setItem(storageKey, JSON.stringify(payload));
+
+      if (!userId || !isFirebaseConfigured()) {
+        try {
+          const wKeys = payload.widths
+            ? Object.keys(payload.widths).length
+            : 0;
+          const hKeys = payload.hidden
+            ? Object.keys(payload.hidden).length
+            : 0;
+          if (wKeys === 0 && hKeys === 0) {
+            localStorage.removeItem(storageKey);
+          } else {
+            localStorage.setItem(storageKey, JSON.stringify(payload));
+          }
+        } catch {
+          /* ignore */
         }
-      } catch {
-        /* ignore */
+        return;
       }
+
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+      persistTimerRef.current = setTimeout(() => {
+        void saveFormListLayout(userId, storageKey, payload);
+      }, 400);
     },
-    [storageKey, colIds, defaults.widths]
+    [storageKey, colIds, defaults.widths, userId]
   );
+
+  useEffect(() => {
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    };
+  }, []);
 
   const { widths, hidden } = layout;
 

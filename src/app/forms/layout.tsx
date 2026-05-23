@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { FORM_TYPES } from "@/lib/formTypes";
+import { FormsUserProvider } from "@/app/forms/FormsUserContext";
 
 export default async function FormsLayout({
   children,
@@ -69,7 +70,7 @@ export default async function FormsLayout({
       </header>
 
       <main className="mx-auto w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-14 2xl:px-20 py-6">
-        {children}
+        <FormsUserProvider userId={user.id}>{children}</FormsUserProvider>
       </main>
     </div>
   );

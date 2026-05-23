@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # spare SQLite copy if DATABASE_URL ever pointed at prisma/ (use root dev.db only)
 /prisma/dev.db

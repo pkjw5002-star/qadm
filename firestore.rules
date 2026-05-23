@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 로그인은 iron-session(앱 쿠키). tableLayouts는 내부 MVP용으로 열어 둡니다.
+    match /users/{userId}/tableLayouts/{layoutId} {
+      allow read, write: if true;
+    }
+  }
+}
