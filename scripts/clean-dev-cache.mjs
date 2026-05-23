@@ -11,3 +11,10 @@ if (fs.existsSync(nextDir)) {
 } else {
   console.log(".next not found (ok)");
 }
+
+// output 경로 변경 전 남은 SQLite 클라이언트(client/ 폴더 + client.ts 충돌) 제거
+const staleClientDir = path.join(root, "src", "generated", "prisma", "client");
+if (fs.existsSync(staleClientDir) && fs.statSync(staleClientDir).isDirectory()) {
+  fs.rmSync(staleClientDir, { recursive: true, force: true });
+  console.log("Removed stale src/generated/prisma/client/ directory");
+}
