@@ -52,6 +52,23 @@ function buildDefaults(columns: readonly FormListColumn[]) {
 
 const NON_HIDE = new Set(["no"]);
 
+const STICKY_NO_SHADOW =
+  "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]";
+
+function isNoColumn(col: FormListColumn | undefined): boolean {
+  return col?.variant === "no";
+}
+
+function stickyThClass(col: FormListColumn | undefined): string {
+  if (!isNoColumn(col)) return "";
+  return `sticky left-0 z-20 bg-zinc-50 ${STICKY_NO_SHADOW}`;
+}
+
+function stickyTdClass(col: FormListColumn | undefined): string {
+  if (!isNoColumn(col)) return "";
+  return `sticky left-0 z-10 bg-white ${STICKY_NO_SHADOW} group-hover:bg-zinc-50`;
+}
+
 type LayoutState = {
   widths: Record<string, number>;
   hidden: Record<string, boolean>;
@@ -489,11 +506,13 @@ export default function FormListTable({
           </colgroup>
           <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
             <tr>
-              {visibleCols.map((id) => (
+              {visibleCols.map((id) => {
+                const col = colById.get(id);
+                return (
                 <th
                   key={id}
                   ref={searchOpenColId === id ? searchPanelRef : undefined}
-                  className="relative px-2 py-2 align-top font-medium"
+                  className={`relative px-2 py-2 align-top font-medium ${stickyThClass(col)}`}
                 >
                   <div className="min-w-0 pr-4">
                     <button
@@ -551,7 +570,8 @@ export default function FormListTable({
                     }}
                   />
                 </th>
-              ))}
+              );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -575,10 +595,11 @@ export default function FormListTable({
                 : "text-sky-900 hover:underline";
 
               return (
-              <tr key={row.id} className="hover:bg-zinc-50">
+              <tr key={row.id} className="group hover:bg-zinc-50">
                 {visibleCols.map((id) => {
                   const col = colById.get(id);
                   const variant = col?.variant ?? "text";
+                  const sticky = stickyTdClass(col);
                   if (variant === "no") {
                     const label =
                       row.cells[id]?.trim() !== ""
@@ -587,7 +608,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className="border-b border-zinc-100 px-1 py-2 align-top"
+                        className={`border-b border-zinc-100 px-1 py-2 align-top ${sticky}`}
                       >
                         <Link
                           href={`/forms/${row.id}`}
@@ -604,7 +625,7 @@ export default function FormListTable({
                       return (
                         <td
                           key={id}
-                          className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${mutedClass}`}
+                          className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${mutedClass} ${sticky}`}
                         >
                           —
                         </td>
@@ -613,7 +634,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass}`}
+                        className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
                       >
                         <div
                           className="line-clamp-2 break-words whitespace-pre-wrap"
@@ -630,7 +651,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass}`}
+                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
                       >
                         <div className="truncate whitespace-nowrap" title={tip}>
                           {v}
@@ -642,7 +663,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass}`}
+                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
                       >
                         <div className="truncate" title={tip}>
                           {v}
@@ -663,7 +684,7 @@ export default function FormListTable({
                   return (
                     <td
                       key={id}
-                      className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass}`}
+                      className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
                     >
                       {href ? (
                         <Link
