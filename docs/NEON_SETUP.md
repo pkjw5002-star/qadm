@@ -29,6 +29,8 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
+**`P1013` / `file:./dev.db` 오류가 나면:** `.env`는 Neon URL인데 터미널에 예전 `DATABASE_URL=file:./dev.db`가 남은 경우입니다. PowerShell에서 `Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue` 후 다시 실행하거나, 터미널을 새로 열고 `npx prisma migrate deploy`를 실행하세요. (프로젝트는 `prisma.config.ts`에서 `.env`가 우선되도록 설정되어 있습니다.)
+
 ## 4. Vercel 환경 변수
 
 Vercel → 프로젝트 → **Settings** → **Environment Variables**
