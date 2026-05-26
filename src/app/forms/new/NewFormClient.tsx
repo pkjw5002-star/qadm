@@ -10,10 +10,10 @@ import {
 } from "react";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import {
-  applyFormPhotoFieldsToDom,
   hasFormPhotoFiles,
   prepareFormPhotosForSubmit,
 } from "@/lib/prepareFormPhotosForSubmit";
+import FormPhotoField from "@/components/FormPhotoField";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -214,7 +214,6 @@ export default function NewFormClient({
       return;
     }
 
-    applyFormPhotoFieldsToDom(form, formData);
     submitAfterPhotoUpload.current = true;
     form.requestSubmit();
   }
@@ -573,35 +572,13 @@ export default function NewFormClient({
                 />
               </label>
 
-              <div className="space-y-2">
-                <span className="text-sm font-medium text-zinc-800">
-                  사진첨부
-                </span>
-                <p className="text-xs text-zinc-500">
-                  JPG 또는 PNG 파일을 올리거나, 아래에 이미지 주소(URL)를 직접
-                  입력할 수 있습니다. 둘 다 비워도 됩니다.
-                </p>
-                <input
-                  name="photoFile"
-                  type="file"
-                  accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                  className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                />
-                <label className="block">
-                  <span className="text-sm text-zinc-700">
-                    이미지 URL (선택)
-                  </span>
-                  <input
-                    name="photoUrlDirect"
-                    type="url"
-                    defaultValue={complaintBase.photoUrlDirect ?? ""}
-                    className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                    placeholder="https://example.com/photo.png"
-                    inputMode="url"
-                    autoComplete="url"
-                  />
-                </label>
-              </div>
+              <FormPhotoField
+                label="사진첨부"
+                fileField="photoFile"
+                urlField="photoUrlDirect"
+                removeField="photoRemove"
+                defaultPhoto={complaintBase.receiptPhoto}
+              />
 
               <label className="block">
                 <span className="text-sm font-medium text-zinc-800">
@@ -685,35 +662,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    관련사진
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL을 입력할 수 있습니다.
-                    둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="outsideAsPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="outsideAsPhotoUrlDirect"
-                      type="url"
-                      defaultValue={complaintBase.outsideAsPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="관련사진"
+                  fileField="outsideAsPhotoFile"
+                  urlField="outsideAsPhotoUrlDirect"
+                  removeField="outsideAsPhotoRemove"
+                  defaultPhoto={complaintBase.outsideAsPhoto}
+                />
               </div>
 
               <div
@@ -784,34 +739,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    원인분석 참고사진
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL. 둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="prodCauseRefPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="prodCauseRefPhotoUrlDirect"
-                      type="url"
-                      defaultValue={complaintBase.prodCauseRefPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="원인분석 참고사진"
+                  fileField="prodCauseRefPhotoFile"
+                  urlField="prodCauseRefPhotoUrlDirect"
+                  removeField="prodCauseRefPhotoRemove"
+                  defaultPhoto={complaintBase.prodCauseRefPhoto}
+                />
 
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
@@ -825,34 +759,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    재발방지 참고사진
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL. 둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="prodRecurrenceRefPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="prodRecurrenceRefPhotoUrlDirect"
-                      type="url"
-                      defaultValue={complaintBase.prodRecurrenceRefPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="재발방지 참고사진"
+                  fileField="prodRecurrenceRefPhotoFile"
+                  urlField="prodRecurrenceRefPhotoUrlDirect"
+                  removeField="prodRecurrenceRefPhotoRemove"
+                  defaultPhoto={complaintBase.prodRecurrenceRefPhoto}
+                />
               </div>
 
               <div
@@ -897,34 +810,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    원인분석 참고사진
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL. 둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="labCauseRefPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="labCauseRefPhotoUrlDirect"
-                      type="url"
-                      defaultValue={complaintBase.labCauseRefPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="원인분석 참고사진"
+                  fileField="labCauseRefPhotoFile"
+                  urlField="labCauseRefPhotoUrlDirect"
+                  removeField="labCauseRefPhotoRemove"
+                  defaultPhoto={complaintBase.labCauseRefPhoto}
+                />
 
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
@@ -938,34 +830,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    재발방지대책 참고사진
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL. 둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="labRecurrenceRefPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="labRecurrenceRefPhotoUrlDirect"
-                      type="url"
-                      defaultValue={complaintBase.labRecurrenceRefPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="재발방지대책 참고사진"
+                  fileField="labRecurrenceRefPhotoFile"
+                  urlField="labRecurrenceRefPhotoUrlDirect"
+                  removeField="labRecurrenceRefPhotoRemove"
+                  defaultPhoto={complaintBase.labRecurrenceRefPhoto}
+                />
               </div>
 
               <div
@@ -1137,35 +1008,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    의뢰내용에 대한 사진 첨부
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일을 올리거나, 이미지 주소(URL)를 입력할 수
-                    있습니다. 둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="qiReceiptPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="qiReceiptPhotoUrlDirect"
-                      type="url"
-                      defaultValue={qiBase.qiReceiptPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="의뢰내용에 대한 사진 첨부"
+                  fileField="qiReceiptPhotoFile"
+                  urlField="qiReceiptPhotoUrlDirect"
+                  removeField="qiReceiptPhotoRemove"
+                  defaultPhoto={qiBase.qiReceiptPhoto}
+                />
               </div>
 
               <div className={`space-y-4 ${qiTab !== 2 ? "hidden" : ""}`}>
@@ -1209,35 +1058,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    처리내용에 대한 사진 첨부
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL을 입력할 수 있습니다.
-                    둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="qiReviewPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="qiReviewPhotoUrlDirect"
-                      type="url"
-                      defaultValue={qiBase.qiReviewPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="처리내용에 대한 사진 첨부"
+                  fileField="qiReviewPhotoFile"
+                  urlField="qiReviewPhotoUrlDirect"
+                  removeField="qiReviewPhotoRemove"
+                  defaultPhoto={qiBase.qiReviewPhoto}
+                />
               </div>
 
               <div className={`space-y-4 ${qiTab !== 3 ? "hidden" : ""}`}>
@@ -1353,35 +1180,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    제안내용에 대한 사진 첨부
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일을 올리거나, 이미지 주소(URL)를 입력할 수
-                    있습니다. 둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="sgProposalPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="sgProposalPhotoUrlDirect"
-                      type="url"
-                      defaultValue={sgBase.sgProposalPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="제안내용에 대한 사진 첨부"
+                  fileField="sgProposalPhotoFile"
+                  urlField="sgProposalPhotoUrlDirect"
+                  removeField="sgProposalPhotoRemove"
+                  defaultPhoto={sgBase.sgProposalPhoto}
+                />
 
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
@@ -1472,35 +1277,13 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    처리내용에 대한 사진 첨부
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL을 입력할 수 있습니다.
-                    둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="sgProcessingPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="sgProcessingPhotoUrlDirect"
-                      type="url"
-                      defaultValue={sgBase.sgProcessingPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                <FormPhotoField
+                  label="처리내용에 대한 사진 첨부"
+                  fileField="sgProcessingPhotoFile"
+                  urlField="sgProcessingPhotoUrlDirect"
+                  removeField="sgProcessingPhotoRemove"
+                  defaultPhoto={sgBase.sgProcessingPhoto}
+                />
               </div>
             </section>
           ) : isAbLike ? (
@@ -1640,37 +1423,17 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    {isWorkCoop
+                <FormPhotoField
+                  label={
+                    isWorkCoop
                       ? "협조요청에 대한 사진 첨부"
-                      : "이상현상 대한 사진 첨부"}
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일을 올리거나, 이미지 주소(URL)를 입력할 수
-                    있습니다. 둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="abReportPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="abReportPhotoUrlDirect"
-                      type="url"
-                      defaultValue={abBase.abReportPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                      : "이상현상 대한 사진 첨부"
+                  }
+                  fileField="abReportPhotoFile"
+                  urlField="abReportPhotoUrlDirect"
+                  removeField="abReportPhotoRemove"
+                  defaultPhoto={abBase.abReportPhoto}
+                />
               </div>
 
               <div className={`space-y-4 ${abTab !== 2 ? "hidden" : ""}`}>
@@ -1720,37 +1483,17 @@ export default function NewFormClient({
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-zinc-800">
-                    {isWorkCoop
+                <FormPhotoField
+                  label={
+                    isWorkCoop
                       ? "처리내용에 대한 사진 첨부"
-                      : "조치내용에 대한 사진 첨부"}
-                  </span>
-                  <p className="text-xs text-zinc-500">
-                    JPG 또는 PNG 파일, 또는 이미지 URL을 입력할 수 있습니다.
-                    둘 다 비워도 됩니다.
-                  </p>
-                  <input
-                    name="abHandlingPhotoFile"
-                    type="file"
-                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-                    className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium"
-                  />
-                  <label className="block">
-                    <span className="text-sm text-zinc-700">
-                      이미지 URL (선택)
-                    </span>
-                    <input
-                      name="abHandlingPhotoUrlDirect"
-                      type="url"
-                      defaultValue={abBase.abHandlingPhotoUrlDirect ?? ""}
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-                      placeholder="https://example.com/photo.png"
-                      inputMode="url"
-                      autoComplete="url"
-                    />
-                  </label>
-                </div>
+                      : "조치내용에 대한 사진 첨부"
+                  }
+                  fileField="abHandlingPhotoFile"
+                  urlField="abHandlingPhotoUrlDirect"
+                  removeField="abHandlingPhotoRemove"
+                  defaultPhoto={abBase.abHandlingPhoto}
+                />
               </div>
 
               <div className={`space-y-4 ${abTab !== 3 ? "hidden" : ""}`}>

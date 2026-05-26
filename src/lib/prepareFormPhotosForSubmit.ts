@@ -40,15 +40,34 @@ export async function prepareFormPhotosForSubmit(
     return { ok: true };
   }
 
+  const uploads: Promise<
+    | { ok: true; urlField: string; url: string; fileField: string }
+    | { ok: false; message: string }
+  >[] = [];
+
   for (const { fileField, urlField } of FORM_PHOTO_FIELD_PAIRS) {
-    const entry = formData.get(fileField);
-    if (!(entry instanceof File) || entry.size === 0) continue;
+    for (const entry of formData.getAll(fileField)) {
+      if (!(entry instanceof File) || entry.size === 0) continue;
+      uploads.push(
+        uploadFormPhotoClient(entry).then((result) =>
+          result.ok
+            ? { ok: true as const, urlField, url: result.url, fileField }
+            : result
+        )
+      );
+    }
+  }
 
-    const uploaded = await uploadFormPhotoClient(entry);
-    if (!uploaded.ok) return uploaded;
+  if (uploads.length === 0) return { ok: true };
 
-    formData.set(urlField, uploaded.url);
-    formData.delete(fileField);
+  const results = await Promise.all(uploads);
+  for (const result of results) {
+    if (!result.ok) return result;
+    const existing = formData.getAll(result.urlField).map(String);
+    if (!existing.includes(result.url)) {
+      formData.append(result.urlField, result.url);
+    }
+    formData.delete(result.fileField);
   }
 
   return { ok: true };

@@ -1,3 +1,6 @@
+import type { PhotoRef } from "@/lib/photoRef";
+import { photoRefToUrlFieldValue } from "@/lib/photoRef";
+
 /** 업무협조전 수정 폼의 `defaultValue`용 플랫 필드 (이상발생신고서와 동일 필드명) */
 export type WorkCoopDefaults = Partial<{
   abReportDate: string;
@@ -6,11 +9,13 @@ export type WorkCoopDefaults = Partial<{
   abProblemAndRequest: string;
   abHandlingDepartmentOwner: string;
   abReportPhotoUrlDirect: string;
+  abReportPhoto?: PhotoRef;
 
   abHandlingDate: string;
   abPlannedDateReason: string;
   abCauseAndActionPrevention: string;
   abHandlingPhotoUrlDirect: string;
+  abHandlingPhoto?: PhotoRef;
 
   abConfirmDate: string;
   abConfirmContent: string;
@@ -61,7 +66,8 @@ export function workCoopJsonToDefaults(data: unknown): WorkCoopDefaults {
       r?.handlingDepartmentOwner != null
         ? String(r.handlingDepartmentOwner)
         : "",
-    abReportPhotoUrlDirect: reportPhoto?.externalUrl ?? "",
+    abReportPhotoUrlDirect: photoRefToUrlFieldValue(reportPhoto),
+    abReportPhoto: reportPhoto,
 
     abHandlingDate: dateInput(h?.date),
     abPlannedDateReason:
@@ -70,7 +76,8 @@ export function workCoopJsonToDefaults(data: unknown): WorkCoopDefaults {
       h?.causeAndActionPrevention != null
         ? String(h.causeAndActionPrevention)
         : "",
-    abHandlingPhotoUrlDirect: handlingPhoto?.externalUrl ?? "",
+    abHandlingPhotoUrlDirect: photoRefToUrlFieldValue(handlingPhoto),
+    abHandlingPhoto: handlingPhoto,
 
     abConfirmDate: dateInput(c?.date),
     abConfirmContent: c?.content != null ? String(c.content) : "",

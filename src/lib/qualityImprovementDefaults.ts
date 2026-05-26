@@ -1,3 +1,6 @@
+import type { PhotoRef } from "@/lib/photoRef";
+import { photoRefToUrlFieldValue } from "@/lib/photoRef";
+
 /** 품질개선의뢰서 수정 폼의 `defaultValue`용 플랫 필드 */
 export type QualityImprovementDefaults = Partial<{
   qiReceiptDate: string;
@@ -6,11 +9,13 @@ export type QualityImprovementDefaults = Partial<{
   qiRequestReasonDetails: string;
   qiReviewDepartmentOwner: string;
   qiReceiptPhotoUrlDirect: string;
+  qiReceiptPhoto?: PhotoRef;
 
   qiReviewDate: string;
   qiReviewDecisionDateReason: string;
   qiReviewImprovementContent: string;
   qiReviewPhotoUrlDirect: string;
+  qiReviewPhoto?: PhotoRef;
 
   qiConfirmDate: string;
   qiConfirmContent: string;
@@ -61,14 +66,16 @@ export function qualityImprovementJsonToDefaults(
       r?.requestReasonDetails != null ? String(r.requestReasonDetails) : "",
     qiReviewDepartmentOwner:
       r?.reviewDepartmentOwner != null ? String(r.reviewDepartmentOwner) : "",
-    qiReceiptPhotoUrlDirect: receiptPhoto?.externalUrl ?? "",
+    qiReceiptPhotoUrlDirect: photoRefToUrlFieldValue(receiptPhoto),
+    qiReceiptPhoto: receiptPhoto,
 
     qiReviewDate: dateInput(v?.date),
     qiReviewDecisionDateReason:
       v?.decisionDateReason != null ? String(v.decisionDateReason) : "",
     qiReviewImprovementContent:
       v?.improvementContent != null ? String(v.improvementContent) : "",
-    qiReviewPhotoUrlDirect: reviewPhoto?.externalUrl ?? "",
+    qiReviewPhotoUrlDirect: photoRefToUrlFieldValue(reviewPhoto),
+    qiReviewPhoto: reviewPhoto,
 
     qiConfirmDate: dateInput(c?.date),
     qiConfirmContent: c?.content != null ? String(c.content) : "",

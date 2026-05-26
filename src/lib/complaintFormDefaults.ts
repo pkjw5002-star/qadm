@@ -1,3 +1,6 @@
+import type { PhotoRef } from "@/lib/photoRef";
+import { photoRefToUrlFieldValue } from "@/lib/photoRef";
+
 /** 불만신고서 수정 폼의 `defaultValue`용 플랫 필드 */
 export type ComplaintFormDefaults = Partial<{
   receiptDate: string;
@@ -8,12 +11,14 @@ export type ComplaintFormDefaults = Partial<{
   productManufacturing: string;
   actionContent: string;
   photoUrlDirect: string;
+  receiptPhoto?: PhotoRef;
   outsideAsDate: string;
   outsideAsExecutor: string;
   outsideAsPlace: string;
   outsideAsDuration: string;
   outsideAsContentResult: string;
   outsideAsPhotoUrlDirect: string;
+  outsideAsPhoto?: PhotoRef;
   prodDefectRecoveryDate: string;
   prodCauseAnalysisDate: string;
   prodRecoveredManufacturingInfo: string;
@@ -22,12 +27,16 @@ export type ComplaintFormDefaults = Partial<{
   prodRecurrencePrevention: string;
   prodCauseRefPhotoUrlDirect: string;
   prodRecurrenceRefPhotoUrlDirect: string;
+  prodCauseRefPhoto?: PhotoRef;
+  prodRecurrenceRefPhoto?: PhotoRef;
   labChargePerson: string;
   labCauseAnalysisDate: string;
   labCauseAnalysis: string;
   labRecurrencePrevention: string;
   labCauseRefPhotoUrlDirect: string;
   labRecurrenceRefPhotoUrlDirect: string;
+  labCauseRefPhoto?: PhotoRef;
+  labRecurrenceRefPhoto?: PhotoRef;
   recoveryProcessingDate: string;
   recoveryProcessingContent: string;
   recoveryProcessingDetail: string;
@@ -97,14 +106,16 @@ export function complaintJsonToFormDefaults(data: unknown): ComplaintFormDefault
     productManufacturing:
       r?.productManufacturing != null ? String(r.productManufacturing) : "",
     actionContent: r?.actionContent != null ? String(r.actionContent) : "",
-    photoUrlDirect: photo?.externalUrl ?? "",
+    photoUrlDirect: photoRefToUrlFieldValue(photo),
+    receiptPhoto: photo,
     outsideAsDate: dateInput(o?.date),
     outsideAsExecutor: o?.executor != null ? String(o.executor) : "",
     outsideAsPlace: o?.place != null ? String(o.place) : "",
     outsideAsDuration: o?.duration != null ? String(o.duration) : "",
     outsideAsContentResult:
       o?.contentAndResult != null ? String(o.contentAndResult) : "",
-    outsideAsPhotoUrlDirect: outPh?.externalUrl ?? "",
+    outsideAsPhotoUrlDirect: photoRefToUrlFieldValue(outPh),
+    outsideAsPhoto: outPh,
     prodDefectRecoveryDate: dateInput(p?.defectiveProductRecoveryDate),
     prodCauseAnalysisDate: dateInput(p?.causeAnalysisDate),
     prodRecoveredManufacturingInfo:
@@ -121,8 +132,10 @@ export function complaintJsonToFormDefaults(data: unknown): ComplaintFormDefault
       p?.recurrencePreventionMeasures != null
         ? String(p.recurrencePreventionMeasures)
         : "",
-    prodCauseRefPhotoUrlDirect: pCausePh?.externalUrl ?? "",
-    prodRecurrenceRefPhotoUrlDirect: pRecPh?.externalUrl ?? "",
+    prodCauseRefPhotoUrlDirect: photoRefToUrlFieldValue(pCausePh),
+    prodRecurrenceRefPhotoUrlDirect: photoRefToUrlFieldValue(pRecPh),
+    prodCauseRefPhoto: pCausePh,
+    prodRecurrenceRefPhoto: pRecPh,
     labChargePerson: l?.chargePerson != null ? String(l.chargePerson) : "",
     labCauseAnalysisDate: dateInput(l?.causeAnalysisDate),
     labCauseAnalysis: l?.causeAnalysis != null ? String(l.causeAnalysis) : "",
@@ -130,8 +143,10 @@ export function complaintJsonToFormDefaults(data: unknown): ComplaintFormDefault
       l?.recurrencePreventionMeasures != null
         ? String(l.recurrencePreventionMeasures)
         : "",
-    labCauseRefPhotoUrlDirect: lCausePh?.externalUrl ?? "",
-    labRecurrenceRefPhotoUrlDirect: lRecPh?.externalUrl ?? "",
+    labCauseRefPhotoUrlDirect: photoRefToUrlFieldValue(lCausePh),
+    labRecurrenceRefPhotoUrlDirect: photoRefToUrlFieldValue(lRecPh),
+    labCauseRefPhoto: lCausePh,
+    labRecurrenceRefPhoto: lRecPh,
     recoveryProcessingDate: dateInput(x?.processingDate),
     recoveryProcessingContent:
       x?.processingContent != null ? String(x.processingContent) : "",

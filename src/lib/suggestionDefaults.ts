@@ -1,3 +1,6 @@
+import type { PhotoRef } from "@/lib/photoRef";
+import { photoRefToUrlFieldValue } from "@/lib/photoRef";
+
 /** 제안서 수정 폼의 `defaultValue`용 플랫 필드 */
 export type SuggestionDefaults = Partial<{
   sgProposalDate: string;
@@ -5,6 +8,7 @@ export type SuggestionDefaults = Partial<{
   sgProposalContent: string;
   sgProposalEffect: string;
   sgProposalPhotoUrlDirect: string;
+  sgProposalPhoto?: PhotoRef;
 
   sgReviewDate: string;
   sgReviewerComment: string;
@@ -12,6 +16,7 @@ export type SuggestionDefaults = Partial<{
   sgProcessingPlannedDate: string;
   sgProcessingContent: string;
   sgProcessingPhotoUrlDirect: string;
+  sgProcessingPhoto?: PhotoRef;
 }>;
 
 function dateInput(v: unknown): string {
@@ -53,7 +58,8 @@ export function suggestionJsonToDefaults(data: unknown): SuggestionDefaults {
       proposal?.content != null ? String(proposal.content) : "",
     sgProposalEffect:
       proposal?.effect != null ? String(proposal.effect) : "",
-    sgProposalPhotoUrlDirect: proposalPhoto?.externalUrl ?? "",
+    sgProposalPhotoUrlDirect: photoRefToUrlFieldValue(proposalPhoto),
+    sgProposalPhoto: proposalPhoto,
 
     sgReviewDate: dateInput(review?.reviewDate),
     sgReviewerComment:
@@ -69,6 +75,7 @@ export function suggestionJsonToDefaults(data: unknown): SuggestionDefaults {
       review?.processingContent != null
         ? String(review.processingContent)
         : "",
-    sgProcessingPhotoUrlDirect: processingPhoto?.externalUrl ?? "",
+    sgProcessingPhotoUrlDirect: photoRefToUrlFieldValue(processingPhoto),
+    sgProcessingPhoto: processingPhoto,
   };
 }

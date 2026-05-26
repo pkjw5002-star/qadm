@@ -1,4 +1,5 @@
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { compressImageFile } from "@/lib/compressImageFile";
 import { getFirebaseApp } from "@/lib/firebase";
 
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -45,10 +46,16 @@ export async function uploadFormPhotoClient(
   }
 
   try {
+    const toUpload = await compressImageFile(file);
     const storage = getStorage(app);
-    const objectPath = `forms/${crypto.randomUUID()}${validated.ext}`;
+    const ext =
+      toUpload.type === "image/png"
+        ? ".png"
+        : validated.ext;
+    const mime = toUpload.type || validated.mime;
+    const objectPath = `forms/${crypto.randomUUID()}${ext}`;
     const storageRef = ref(storage, objectPath);
-    await uploadBytes(storageRef, file, { contentType: validated.mime });
+    await uploadBytes(storageRef, toUpload, { contentType: mime });
     const url = await getDownloadURL(storageRef);
     return { ok: true, url };
   } catch (e) {

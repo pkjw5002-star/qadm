@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FormPhotoGallery from "@/components/FormPhotoGallery";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
@@ -440,48 +441,11 @@ export default async function FormDetailPage({
                     {manufacturingLine || "—"}
                   </DetailBlock>
 
-                  {photo?.uploadedUrl ||
-                  photo?.externalUrl ||
-                  legacyPhotoNote ? (
-                    <div className="space-y-2">
-                      <div className="text-xs font-medium text-zinc-500">
-                        사진첨부
-                      </div>
-                      <div className="space-y-3">
-                        {photo?.uploadedUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={photo.uploadedUrl}
-                            alt="첨부 사진"
-                            className="max-h-72 w-auto max-w-full rounded-xl border border-zinc-200 shadow-sm"
-                          />
-                        ) : null}
-                        {photo?.externalUrl ? (
-                          <div>
-                            <a
-                              href={photo.externalUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sm font-medium text-zinc-900 underline"
-                            >
-                              이미지 링크 열기
-                            </a>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={photo.externalUrl}
-                              alt="외부 이미지"
-                              className="mt-2 max-h-72 w-auto max-w-full rounded-xl border border-zinc-200 shadow-sm"
-                            />
-                          </div>
-                        ) : null}
-                        {legacyPhotoNote && !photo?.uploadedUrl && !photo?.externalUrl ? (
-                          <div className="whitespace-pre-wrap rounded-xl border border-zinc-100 bg-white px-3 py-3 text-sm text-zinc-800 shadow-sm">
-                            {String(legacyPhotoNote)}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
+                  <FormPhotoGallery
+                    photo={photo}
+                    label="사진첨부"
+                    legacyNote={legacyPhotoNote}
+                  />
 
                   <DetailBlock label="조치내용" emphasize>
                     {receiptActionContent.trim()

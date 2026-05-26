@@ -1,15 +1,13 @@
-export type PhotoRef = {
-  uploadedUrl?: string;
-  externalUrl?: string;
-};
+import type { PhotoRef } from "@/lib/photoRef";
+export type { PhotoRef } from "@/lib/photoRef";
 
 export type RawComplaintPhotoAttachments = {
-  complaintPhotoAttachment?: PhotoRef;
-  outsideAsPhotoAttachment?: PhotoRef;
-  causeAnalysisRefPhotoAttachment?: PhotoRef;
-  recurrencePreventionRefPhotoAttachment?: PhotoRef;
-  labCauseRefPhotoAttachment?: PhotoRef;
-  labRecurrenceRefPhotoAttachment?: PhotoRef;
+  complaintPhotoAttachment?: PhotoRef | null;
+  outsideAsPhotoAttachment?: PhotoRef | null;
+  causeAnalysisRefPhotoAttachment?: PhotoRef | null;
+  recurrencePreventionRefPhotoAttachment?: PhotoRef | null;
+  labCauseRefPhotoAttachment?: PhotoRef | null;
+  labRecurrenceRefPhotoAttachment?: PhotoRef | null;
 };
 
 export type MergedComplaintPhotos = {
@@ -22,11 +20,24 @@ export type MergedComplaintPhotos = {
 };
 
 export function pickPhoto(
-  incoming: PhotoRef | undefined,
+  incoming: PhotoRef | null | undefined,
   existing: PhotoRef | undefined
 ): PhotoRef | undefined {
-  if (incoming?.uploadedUrl || incoming?.externalUrl) return incoming;
-  if (existing?.uploadedUrl || existing?.externalUrl) return existing;
+  if (incoming === null) return undefined;
+  if (
+    incoming?.uploadedUrl ||
+    incoming?.externalUrl ||
+    (incoming?.extraUploadedUrls?.length ?? 0) > 0
+  ) {
+    return incoming;
+  }
+  if (
+    existing?.uploadedUrl ||
+    existing?.externalUrl ||
+    (existing?.extraUploadedUrls?.length ?? 0) > 0
+  ) {
+    return existing;
+  }
   return undefined;
 }
 
@@ -48,29 +59,37 @@ export function mergeComplaintPhotos(
     };
   } | null;
 
+  const pickRaw = (
+    key: keyof RawComplaintPhotoAttachments,
+    existing?: PhotoRef
+  ) => {
+    if (!(key in raw)) return existing;
+    return pickPhoto(raw[key], existing);
+  };
+
   return {
-    complaintPhoto: pickPhoto(
-      raw.complaintPhotoAttachment,
+    complaintPhoto: pickRaw(
+      "complaintPhotoAttachment",
       ec?.receipt?.photoAttachment
     ),
-    outsideAsPhoto: pickPhoto(
-      raw.outsideAsPhotoAttachment,
+    outsideAsPhoto: pickRaw(
+      "outsideAsPhotoAttachment",
       ec?.outsideAs?.photoAttachment
     ),
-    causeAnalysisRefPhoto: pickPhoto(
-      raw.causeAnalysisRefPhotoAttachment,
+    causeAnalysisRefPhoto: pickRaw(
+      "causeAnalysisRefPhotoAttachment",
       ec?.productionHandlingReport?.causeAnalysisRefPhoto
     ),
-    recurrencePreventionRefPhoto: pickPhoto(
-      raw.recurrencePreventionRefPhotoAttachment,
+    recurrencePreventionRefPhoto: pickRaw(
+      "recurrencePreventionRefPhotoAttachment",
       ec?.productionHandlingReport?.recurrencePreventionRefPhoto
     ),
-    labCauseRefPhoto: pickPhoto(
-      raw.labCauseRefPhotoAttachment,
+    labCauseRefPhoto: pickRaw(
+      "labCauseRefPhotoAttachment",
       ec?.researchLabHandlingReport?.causeAnalysisRefPhoto
     ),
-    labRecurrenceRefPhoto: pickPhoto(
-      raw.labRecurrenceRefPhotoAttachment,
+    labRecurrenceRefPhoto: pickRaw(
+      "labRecurrenceRefPhotoAttachment",
       ec?.researchLabHandlingReport?.recurrencePreventionRefPhoto
     ),
   };

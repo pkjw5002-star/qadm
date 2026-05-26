@@ -19,6 +19,7 @@ import {
   type PhotoRef,
   type RawComplaintPhotoAttachments,
 } from "@/lib/complaintFormAssemble";
+import { urlsToPhotoRef } from "@/lib/photoRef";
 
 /** 빈 문자열·공백만 → undefined (탭 2~5 미작성 허용) */
 const optionalTrimmedNonEmpty = z.preprocess((v) => {
@@ -205,19 +206,25 @@ async function parseQualityImprovementPhotos(formData: FormData) {
   const receiptPhoto = await parsePhotoField(
     formData,
     "qiReceiptPhotoUrlDirect",
-    "qiReceiptPhotoFile"
+    "qiReceiptPhotoFile",
+    "qiReceiptPhotoRemove"
   );
-  if (receiptPhoto && "error" in receiptPhoto) return receiptPhoto;
+  if (receiptPhoto && typeof receiptPhoto === "object" && "error" in receiptPhoto) {
+    return receiptPhoto;
+  }
   const reviewPhoto = await parsePhotoField(
     formData,
     "qiReviewPhotoUrlDirect",
-    "qiReviewPhotoFile"
+    "qiReviewPhotoFile",
+    "qiReviewPhotoRemove"
   );
-  if (reviewPhoto && "error" in reviewPhoto) return reviewPhoto;
+  if (reviewPhoto && typeof reviewPhoto === "object" && "error" in reviewPhoto) {
+    return reviewPhoto;
+  }
 
   return {
-    receiptPhoto: receiptPhoto as PhotoRef | undefined,
-    reviewPhoto: reviewPhoto as PhotoRef | undefined,
+    receiptPhoto: receiptPhoto as PhotoRef | null | undefined,
+    reviewPhoto: reviewPhoto as PhotoRef | null | undefined,
   };
 }
 
@@ -225,20 +232,26 @@ async function parseAbnormalReportPhotos(formData: FormData) {
   const reportPhoto = await parsePhotoField(
     formData,
     "abReportPhotoUrlDirect",
-    "abReportPhotoFile"
+    "abReportPhotoFile",
+    "abReportPhotoRemove"
   );
-  if (reportPhoto && "error" in reportPhoto) return reportPhoto;
+  if (reportPhoto && typeof reportPhoto === "object" && "error" in reportPhoto) {
+    return reportPhoto;
+  }
 
   const handlingPhoto = await parsePhotoField(
     formData,
     "abHandlingPhotoUrlDirect",
-    "abHandlingPhotoFile"
+    "abHandlingPhotoFile",
+    "abHandlingPhotoRemove"
   );
-  if (handlingPhoto && "error" in handlingPhoto) return handlingPhoto;
+  if (handlingPhoto && typeof handlingPhoto === "object" && "error" in handlingPhoto) {
+    return handlingPhoto;
+  }
 
   return {
-    reportPhoto: reportPhoto as PhotoRef | undefined,
-    handlingPhoto: handlingPhoto as PhotoRef | undefined,
+    reportPhoto: reportPhoto as PhotoRef | null | undefined,
+    handlingPhoto: handlingPhoto as PhotoRef | null | undefined,
   };
 }
 
@@ -246,20 +259,30 @@ async function parseSuggestionPhotos(formData: FormData) {
   const proposalPhoto = await parsePhotoField(
     formData,
     "sgProposalPhotoUrlDirect",
-    "sgProposalPhotoFile"
+    "sgProposalPhotoFile",
+    "sgProposalPhotoRemove"
   );
-  if (proposalPhoto && "error" in proposalPhoto) return proposalPhoto;
+  if (proposalPhoto && typeof proposalPhoto === "object" && "error" in proposalPhoto) {
+    return proposalPhoto;
+  }
 
   const processingPhoto = await parsePhotoField(
     formData,
     "sgProcessingPhotoUrlDirect",
-    "sgProcessingPhotoFile"
+    "sgProcessingPhotoFile",
+    "sgProcessingPhotoRemove"
   );
-  if (processingPhoto && "error" in processingPhoto) return processingPhoto;
+  if (
+    processingPhoto &&
+    typeof processingPhoto === "object" &&
+    "error" in processingPhoto
+  ) {
+    return processingPhoto;
+  }
 
   return {
-    proposalPhoto: proposalPhoto as PhotoRef | undefined,
-    processingPhoto: processingPhoto as PhotoRef | undefined,
+    proposalPhoto: proposalPhoto as PhotoRef | null | undefined,
+    processingPhoto: processingPhoto as PhotoRef | null | undefined,
   };
 }
 
@@ -410,11 +433,23 @@ const CreateFormSchema = z.discriminatedUnion("type", [
 async function parsePhotoField(
   formData: FormData,
   urlField: string,
-  fileField: string
-): Promise<PhotoRef | { error: string } | undefined> {
-  const rawUrl = String(formData.get(urlField) ?? "").trim();
-  let externalUrl: string | undefined;
-  if (rawUrl) {
+  fileField: string,
+  removeField: string
+): Promise<PhotoRef | { error: string } | null | undefined> {
+  if (formData.get(removeField) === "1") {
+    return null;
+  }
+
+  const urlLines = [
+    ...formData.getAll(urlField).map((v) => String(v).trim()),
+    ...String(formData.get(`${urlField}Manual`) ?? "")
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ].filter(Boolean);
+
+  const validatedUrls: string[] = [];
+  for (const rawUrl of urlLines) {
     try {
       const u = new URL(rawUrl);
       if (u.protocol !== "http:" && u.protocol !== "https:") {
@@ -422,7 +457,8 @@ async function parsePhotoField(
           error: "사진 링크는 http 또는 https 주소만 입력할 수 있습니다.",
         };
       }
-      externalUrl = u.toString();
+      const normalized = u.toString();
+      if (!validatedUrls.includes(normalized)) validatedUrls.push(normalized);
     } catch {
       return {
         error:
@@ -431,21 +467,23 @@ async function parsePhotoField(
     }
   }
 
-  const fileEntry = formData.get(fileField);
-  let uploadedUrl: string | undefined;
-  if (fileEntry instanceof File && fileEntry.size > 0) {
-    const saved = await saveComplaintPhotoUpload(fileEntry);
-    if (!saved.ok) return { error: saved.message };
-    uploadedUrl = saved.publicPath;
+  const fileEntries = formData
+    .getAll(fileField)
+    .filter((e): e is File => e instanceof File && e.size > 0);
+
+  const uploadedPaths: string[] = [];
+  if (fileEntries.length > 0) {
+    const results = await Promise.all(
+      fileEntries.map((file) => saveComplaintPhotoUpload(file))
+    );
+    for (const saved of results) {
+      if (!saved.ok) return { error: saved.message };
+      uploadedPaths.push(saved.publicPath);
+    }
   }
 
-  if (uploadedUrl || externalUrl) {
-    return {
-      ...(uploadedUrl ? { uploadedUrl } : {}),
-      ...(externalUrl ? { externalUrl } : {}),
-    };
-  }
-  return undefined;
+  const allUrls = [...validatedUrls, ...uploadedPaths];
+  return urlsToPhotoRef(allUrls);
 }
 
 async function parseComplaintPhotoAttachments(formData: FormData): Promise<
@@ -454,58 +492,93 @@ async function parseComplaintPhotoAttachments(formData: FormData): Promise<
   const receiptPhotos = await parsePhotoField(
     formData,
     "photoUrlDirect",
-    "photoFile"
+    "photoFile",
+    "photoRemove"
   );
-  if (receiptPhotos && "error" in receiptPhotos) return receiptPhotos;
+  if (receiptPhotos && typeof receiptPhotos === "object" && "error" in receiptPhotos) {
+    return receiptPhotos;
+  }
 
   const outsidePhotos = await parsePhotoField(
     formData,
     "outsideAsPhotoUrlDirect",
-    "outsideAsPhotoFile"
+    "outsideAsPhotoFile",
+    "outsideAsPhotoRemove"
   );
-  if (outsidePhotos && "error" in outsidePhotos) return outsidePhotos;
+  if (outsidePhotos && typeof outsidePhotos === "object" && "error" in outsidePhotos) {
+    return outsidePhotos;
+  }
 
   const causeRefPhotos = await parsePhotoField(
     formData,
     "prodCauseRefPhotoUrlDirect",
-    "prodCauseRefPhotoFile"
+    "prodCauseRefPhotoFile",
+    "prodCauseRefPhotoRemove"
   );
-  if (causeRefPhotos && "error" in causeRefPhotos) return causeRefPhotos;
+  if (causeRefPhotos && typeof causeRefPhotos === "object" && "error" in causeRefPhotos) {
+    return causeRefPhotos;
+  }
 
   const recurrenceRefPhotos = await parsePhotoField(
     formData,
     "prodRecurrenceRefPhotoUrlDirect",
-    "prodRecurrenceRefPhotoFile"
+    "prodRecurrenceRefPhotoFile",
+    "prodRecurrenceRefPhotoRemove"
   );
-  if (recurrenceRefPhotos && "error" in recurrenceRefPhotos)
+  if (
+    recurrenceRefPhotos &&
+    typeof recurrenceRefPhotos === "object" &&
+    "error" in recurrenceRefPhotos
+  ) {
     return recurrenceRefPhotos;
+  }
 
   const labCauseRefPhotos = await parsePhotoField(
     formData,
     "labCauseRefPhotoUrlDirect",
-    "labCauseRefPhotoFile"
+    "labCauseRefPhotoFile",
+    "labCauseRefPhotoRemove"
   );
-  if (labCauseRefPhotos && "error" in labCauseRefPhotos)
+  if (
+    labCauseRefPhotos &&
+    typeof labCauseRefPhotos === "object" &&
+    "error" in labCauseRefPhotos
+  ) {
     return labCauseRefPhotos;
+  }
 
   const labRecurrenceRefPhotos = await parsePhotoField(
     formData,
     "labRecurrenceRefPhotoUrlDirect",
-    "labRecurrenceRefPhotoFile"
+    "labRecurrenceRefPhotoFile",
+    "labRecurrenceRefPhotoRemove"
   );
-  if (labRecurrenceRefPhotos && "error" in labRecurrenceRefPhotos)
+  if (
+    labRecurrenceRefPhotos &&
+    typeof labRecurrenceRefPhotos === "object" &&
+    "error" in labRecurrenceRefPhotos
+  ) {
     return labRecurrenceRefPhotos;
+  }
 
   return {
-    ...(receiptPhotos ? { complaintPhotoAttachment: receiptPhotos as PhotoRef } : {}),
-    ...(outsidePhotos ? { outsideAsPhotoAttachment: outsidePhotos as PhotoRef } : {}),
-    ...(causeRefPhotos ? { causeAnalysisRefPhotoAttachment: causeRefPhotos as PhotoRef } : {}),
-    ...(recurrenceRefPhotos
-      ? { recurrencePreventionRefPhotoAttachment: recurrenceRefPhotos as PhotoRef }
+    ...(receiptPhotos !== undefined
+      ? { complaintPhotoAttachment: receiptPhotos }
       : {}),
-    ...(labCauseRefPhotos ? { labCauseRefPhotoAttachment: labCauseRefPhotos as PhotoRef } : {}),
-    ...(labRecurrenceRefPhotos
-      ? { labRecurrenceRefPhotoAttachment: labRecurrenceRefPhotos as PhotoRef }
+    ...(outsidePhotos !== undefined
+      ? { outsideAsPhotoAttachment: outsidePhotos }
+      : {}),
+    ...(causeRefPhotos !== undefined
+      ? { causeAnalysisRefPhotoAttachment: causeRefPhotos }
+      : {}),
+    ...(recurrenceRefPhotos !== undefined
+      ? { recurrencePreventionRefPhotoAttachment: recurrenceRefPhotos }
+      : {}),
+    ...(labCauseRefPhotos !== undefined
+      ? { labCauseRefPhotoAttachment: labCauseRefPhotos }
+      : {}),
+    ...(labRecurrenceRefPhotos !== undefined
+      ? { labRecurrenceRefPhotoAttachment: labRecurrenceRefPhotos }
       : {}),
   };
 }
@@ -1050,11 +1123,24 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
 }
 
 function pickPhoto(
-  incoming: PhotoRef | undefined,
+  incoming: PhotoRef | null | undefined,
   existing: PhotoRef | undefined
 ): PhotoRef | undefined {
-  if (incoming?.uploadedUrl || incoming?.externalUrl) return incoming;
-  if (existing?.uploadedUrl || existing?.externalUrl) return existing;
+  if (incoming === null) return undefined;
+  if (
+    incoming?.uploadedUrl ||
+    incoming?.externalUrl ||
+    (incoming?.extraUploadedUrls?.length ?? 0) > 0
+  ) {
+    return incoming;
+  }
+  if (
+    existing?.uploadedUrl ||
+    existing?.externalUrl ||
+    (existing?.extraUploadedUrls?.length ?? 0) > 0
+  ) {
+    return existing;
+  }
   return undefined;
 }
 
