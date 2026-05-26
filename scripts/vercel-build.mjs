@@ -15,9 +15,9 @@ Production / Preview 에 아래를 추가한 뒤 Redeploy 하세요.
 
   DATABASE_URL = Neon Connection string (Prisma 탭, postgresql://...)
   SESSION_PASSWORD = 32자 이상 (.env 와 동일)
-  NEXT_PUBLIC_FIREBASE_* = .env.local 6개
+  NEXT_PUBLIC_FIREBASE_* = .env.local 6개 (사진 업로드 필수)
 
-자세히: docs/NEON_SETUP.md
+자세히: docs/NEON_SETUP.md , docs/VERCEL_ENV.md , docs/PHOTO_UPLOAD.md
 `);
   process.exit(1);
 }

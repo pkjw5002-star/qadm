@@ -1,0 +1,12 @@
+rules_version = '2';
+// QADM: iron-session 로그인(앱 쿠키). Storage는 MVP로 forms/ 경로에 이미지 업로드 허용.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /forms/{fileName} {
+      allow read: if true;
+      allow write: if request.resource != null
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

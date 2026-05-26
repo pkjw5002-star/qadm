@@ -1,6 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
+import { isFirebaseConfigured } from "@/lib/firebase";
+import { prepareFormPhotosForSubmit } from "@/lib/prepareFormPhotosForSubmit";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -93,6 +101,8 @@ export default function NewFormClient({
   const [qiTab, setQiTab] = useState<1 | 2 | 3>(1);
   const [sgTab, setSgTab] = useState<1 | 2>(1);
   const [abTab, setAbTab] = useState<1 | 2 | 3>(1);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoSubmitError, setPhotoSubmitError] = useState<string | null>(null);
 
   const base = useMemo(() => defaults ?? {}, [defaults]);
   const complaintBase = base as ComplaintFormDefaults;
@@ -173,6 +183,27 @@ export default function NewFormClient({
             : updatePending
     : createPending;
 
+  const saving = pending || photoUploading;
+
+  async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPhotoSubmitError(null);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    if (isFirebaseConfigured()) {
+      setPhotoUploading(true);
+      const prepared = await prepareFormPhotosForSubmit(formData);
+      setPhotoUploading(false);
+      if (!prepared.ok) {
+        setPhotoSubmitError(prepared.message);
+        return;
+      }
+    }
+
+    action(formData);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
@@ -211,7 +242,7 @@ export default function NewFormClient({
 
       {/* 탭으로 숨긴 패널에도 required가 있으면 브라우저 기본 검증이 막을 수 있어 noValidate 후 서버(Zod) 검증 */}
       <form
-        action={action}
+        onSubmit={handleFormSubmit}
         noValidate={
           isComplaint ||
           isQualityImprovement ||
@@ -1760,6 +1791,11 @@ export default function NewFormClient({
             </>
           )}
 
+          {photoSubmitError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {photoSubmitError}
+            </div>
+          ) : null}
           {state?.ok === false ? (
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {state.message}
@@ -1770,14 +1806,16 @@ export default function NewFormClient({
         <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
           <button
             type="submit"
-            disabled={pending}
+            disabled={saving}
             className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
           >
-            {pending
-              ? "저장 중..."
-              : editFormId
-                ? "저장"
-                : "제출"}
+            {photoUploading
+              ? "사진 업로드 중..."
+              : pending
+                ? "저장 중..."
+                : editFormId
+                  ? "저장"
+                  : "제출"}
           </button>
         </div>
       </form>
