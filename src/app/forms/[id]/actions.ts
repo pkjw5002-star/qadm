@@ -6,15 +6,52 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { Prisma } from "@/generated/prisma/client";
 
+type CommentAttachmentInput = {
+  url: string;
+  name?: string;
+  mime?: string;
+};
+
+function parseCommentAttachmentsFromForm(
+  formData: FormData
+): CommentAttachmentInput[] {
+  const urls = formData.getAll("commentAttachmentUrl");
+  const names = formData.getAll("commentAttachmentName");
+  const mimes = formData.getAll("commentAttachmentMime");
+
+  const legacyUrls = formData.getAll("commentPhotoUrl");
+
+  const rows: CommentAttachmentInput[] = [];
+  const allUrls = [...urls, ...legacyUrls];
+
+  for (let i = 0; i < allUrls.length; i++) {
+    const rawUrl = String(allUrls[i] ?? "").trim();
+    if (!rawUrl) continue;
+    try {
+      const u = new URL(rawUrl);
+      if (u.protocol !== "http:" && u.protocol !== "https:") continue;
+      const url = u.toString();
+      if (rows.some((r) => r.url === url)) continue;
+      const name = String(names[i] ?? "").trim() || undefined;
+      const mime = String(mimes[i] ?? "").trim() || undefined;
+      rows.push({ url, name, mime });
+    } catch {
+      continue;
+    }
+  }
+  return rows.slice(0, 10);
+}
+
 export async function addFormCommentAction(formData: FormData) {
   const user = await requireUser();
 
   const formId = String(formData.get("formId") ?? "").trim();
   const raw = String(formData.get("comment") ?? "");
   const text = raw.trim();
+  const attachments = parseCommentAttachmentsFromForm(formData);
 
   if (!formId) return;
-  if (!text) {
+  if (!text && attachments.length === 0) {
     redirect(`/forms/${formId}`);
   }
 
@@ -23,7 +60,10 @@ export async function addFormCommentAction(formData: FormData) {
       formId,
       actorId: user.id,
       action: "COMMENT",
-      payload: { text } as Prisma.InputJsonValue,
+      payload: {
+        text,
+        ...(attachments.length > 0 ? { attachments } : {}),
+      } as Prisma.InputJsonValue,
     },
   });
 

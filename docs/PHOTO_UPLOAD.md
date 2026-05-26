@@ -1,6 +1,11 @@
-# 사진 업로드 설정
+# 사진·파일 업로드 설정
 
-서식에 첨부하는 JPG/PNG는 DB(JSON)에 **URL**로 저장됩니다.
+서식 사진(JPG/PNG)과 댓글 첨부(PDF·Office 등)는 DB(JSON)에 **URL**로 저장됩니다.
+
+| 경로 | 용도 | 허용 형식 |
+|------|------|-----------|
+| `forms/` | 서식 사진 | JPG, PNG |
+| `comments/` | 댓글 첨부 | JPG, PNG, PDF, Word, Excel |
 
 | 환경 | 동작 |
 |------|------|
@@ -24,7 +29,8 @@ Vercel은 디스크에 파일을 남길 수 없습니다. **클라이언트 Stor
 firebase deploy --only storage
 ```
 
-규칙이 없으면 Vercel에서 `storage/unauthorized` 오류가 납니다.
+규칙이 없으면 Vercel에서 `storage/unauthorized` 오류가 납니다.  
+댓글에 PDF를 올리려면 `comments/` 규칙이 포함된 최신 `storage.rules`를 반드시 게시하세요.
 
 ## 3. Vercel 환경 변수
 

@@ -17,6 +17,7 @@ import {
   SUGGESTION_LIST_COLUMNS,
   SUGGESTION_LIST_STORAGE_KEY,
 } from "@/app/forms/formListTablePresets";
+import { commentPayloadText, parseCommentPayload } from "@/lib/commentPayload";
 
 const statusLabel: Record<string, string> = {
   DRAFT: "작성중",
@@ -390,12 +391,6 @@ function qualityImprovementListRow(data: unknown, title: string) {
   };
 }
 
-function commentPayloadText(payload: unknown): string {
-  const p = payload as { text?: unknown } | null;
-  const text = p?.text != null ? String(p.text).trim() : "";
-  return text;
-}
-
 type LatestComment = {
   payload: unknown;
   createdAt: Date;
@@ -408,18 +403,26 @@ function getCommentPreview(
   totalCount: number
 ): { line: string; tooltip: string } | null {
   if (totalCount === 0 || !latest) return null;
+  const { attachments } = parseCommentPayload(latest.payload);
   const body = commentPayloadText(latest.payload);
   const actor = latest.actor.name;
   const when = new Date(latest.createdAt).toLocaleString();
   const suffix = totalCount > 1 ? ` · ${totalCount}건` : "";
+  const attachNote =
+    attachments.length > 0 ? ` [첨부 ${attachments.length}]` : "";
   const line = body
-    ? `${actor}: ${body}${suffix}`
-    : `${actor}${suffix}`;
+    ? `${actor}: ${body}${attachNote}${suffix}`
+    : attachments.length > 0
+      ? `${actor}: (첨부 ${attachments.length}개)${suffix}`
+      : `${actor}${suffix}`;
   const tooltip = [
     totalCount > 1 ? `총 ${totalCount}건 (최신 기준)` : "최신 댓글",
     `${actor} · ${when}`,
     "",
-    body || "(내용 없음)",
+    body ||
+      (attachments.length > 0
+        ? `(첨부 ${attachments.length}개)`
+        : "(내용 없음)"),
   ].join("\n");
   return { line, tooltip };
 }

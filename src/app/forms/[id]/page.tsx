@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FormPhotoGallery from "@/components/FormPhotoGallery";
+import { parseCommentPayload } from "@/lib/commentPayload";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
@@ -103,16 +104,16 @@ export default async function FormDetailPage({
     .slice()
     .reverse()
     .map((e) => {
-      const p = e.payload as { text?: unknown } | null;
-      const text = p?.text != null ? String(p.text) : "";
+      const { text, attachments } = parseCommentPayload(e.payload);
       return {
         id: e.id,
         text,
+        attachments,
         actorName: e.actor.name,
         createdAt: new Date(e.createdAt).toLocaleString(),
       };
     })
-    .filter((c) => c.text.trim() !== "");
+    .filter((c) => c.text !== "" || c.attachments.length > 0);
 
   const data = form.data as {
     summary?: unknown;
