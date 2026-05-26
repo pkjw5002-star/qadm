@@ -16,7 +16,7 @@ import { isFirebaseConfigured } from "@/lib/firebase";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
 const MAX_ATTACHMENTS = 10;
-const UPLOAD_CONCURRENCY = 3;
+const UPLOAD_CONCURRENCY = 4;
 
 export default function CommentAttachmentsField() {
   const [items, setItems] = useState<CommentAttachmentMeta[]>([]);

@@ -1,6 +1,6 @@
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { compressImageFile } from "@/lib/compressImageFile";
-import { getFirebaseApp } from "@/lib/firebase";
+import { getClientStorage } from "@/lib/firebaseStorageClient";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -42,8 +42,8 @@ export async function uploadFormPhotoClient(
   const validated = validateImageFile(file);
   if (!validated.ok) return validated;
 
-  const app = getFirebaseApp();
-  if (!app) {
+  const storage = getClientStorage();
+  if (!storage) {
     return {
       ok: false,
       message:
@@ -55,12 +55,9 @@ export async function uploadFormPhotoClient(
     const toUpload = options?.skipCompress
       ? file
       : await compressImageFile(file);
-    const storage = getStorage(app);
-    const ext =
-      toUpload.type === "image/png"
-        ? ".png"
-        : validated.ext;
-    const mime = toUpload.type || validated.mime;
+    const ext = toUpload.type === "image/png" ? ".png" : ".jpg";
+    const mime =
+      toUpload.type === "image/png" ? "image/png" : "image/jpeg";
     const objectPath = `forms/${crypto.randomUUID()}${ext}`;
     const storageRef = ref(storage, objectPath);
     await uploadBytes(storageRef, toUpload, { contentType: mime });
@@ -81,4 +78,12 @@ export async function uploadFormPhotoClient(
       message: "사진을 업로드하지 못했습니다. 잠시 후 다시 시도해 주세요.",
     };
   }
+}
+
+/** 압축 후 업로드 (파일당 파이프라인 — 전체 압축 끝날 때까지 업로드 대기하지 않음) */
+export async function compressAndUploadFormPhoto(
+  file: File
+): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
+  const compressed = await compressImageFile(file);
+  return uploadFormPhotoClient(compressed, { skipCompress: true });
 }

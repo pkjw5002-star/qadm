@@ -2,7 +2,7 @@ import { FORM_PHOTO_FIELD_PAIRS } from "@/lib/formPhotoFields";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
-const UPLOAD_CONCURRENCY = 3;
+const UPLOAD_CONCURRENCY = 4;
 
 export function hasFormPhotoFiles(formData: FormData): boolean {
   return FORM_PHOTO_FIELD_PAIRS.some(({ fileField }) => {
@@ -52,13 +52,15 @@ export async function prepareFormPhotosForSubmit(
 
   if (pending.length === 0) return { ok: true };
 
-  const { uploadFormPhotoClient } = await import("@/lib/uploadFormPhotoClient");
+  const { compressAndUploadFormPhoto } = await import(
+    "@/lib/uploadFormPhotoClient"
+  );
 
   const results = await runWithConcurrency(
     pending,
     UPLOAD_CONCURRENCY,
     async ({ file, urlField, fileField }) => {
-      const result = await uploadFormPhotoClient(file);
+      const result = await compressAndUploadFormPhoto(file);
       return { result, urlField, fileField };
     }
   );

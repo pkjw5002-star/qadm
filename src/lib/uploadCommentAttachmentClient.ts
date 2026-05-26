@@ -1,10 +1,10 @@
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { compressImageFile } from "@/lib/compressImageFile";
 import {
   type CommentAttachmentMeta,
   validateCommentAttachmentFile,
 } from "@/lib/commentAttachmentTypes";
-import { getFirebaseApp } from "@/lib/firebase";
+import { getClientStorage } from "@/lib/firebaseStorageClient";
 
 /** 브라우저에서 Firebase Storage `comments/` 경로로 업로드 */
 export async function uploadCommentAttachmentClient(
@@ -16,8 +16,8 @@ export async function uploadCommentAttachmentClient(
   const validated = validateCommentAttachmentFile(file);
   if (!validated.ok) return validated;
 
-  const app = getFirebaseApp();
-  if (!app) {
+  const storage = getClientStorage();
+  if (!storage) {
     return {
       ok: false,
       message:
@@ -36,7 +36,6 @@ export async function uploadCommentAttachmentClient(
           ? ".jpg"
           : validated.ext;
 
-    const storage = getStorage(app);
     const objectPath = `comments/${crypto.randomUUID()}${ext}`;
     const storageRef = ref(storage, objectPath);
     await uploadBytes(storageRef, toUpload, { contentType: mime });

@@ -2,11 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import { compressImageFile } from "@/lib/compressImageFile";
 import { photoRefToUrlList, type PhotoRef } from "@/lib/photoRef";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
-const UPLOAD_CONCURRENCY = 3;
+/** 압축·업로드를 파일마다 이어서 처리 (동시 4장) */
+const UPLOAD_CONCURRENCY = 4;
 
 type FormPhotoFieldProps = {
   label?: string;
@@ -29,56 +29,67 @@ export default function FormPhotoField({
   const markRemoved =
     cleared || (urls.length === 0 && initialUrls.length > 0);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const uploadFiles = useCallback(async (files: FileList | File[]) => {
-    const list = [...files].filter((f) => f.size > 0);
-    if (list.length === 0) return;
+  const appendUrl = useCallback((url: string) => {
+    setUrls((prev) => {
+      if (prev.includes(url)) return prev;
+      return [...prev, url].slice(0, 20);
+    });
+  }, []);
 
-    if (!isFirebaseConfigured()) {
-      setError(
-        "Firebase가 설정되지 않았습니다. 사진은 저장 시 서버로 전송됩니다."
-      );
-      return;
-    }
+  const uploadFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const list = [...files].filter((f) => f.size > 0);
+      if (list.length === 0) return;
 
-    setError(null);
-    setUploading(true);
-    setCleared(false);
-
-    try {
-      const compressed = await runWithConcurrency(
-        list,
-        UPLOAD_CONCURRENCY,
-        (f) => compressImageFile(f)
-      );
-      const { uploadFormPhotoClient } = await import(
-        "@/lib/uploadFormPhotoClient"
-      );
-      const results = await runWithConcurrency(
-        compressed,
-        UPLOAD_CONCURRENCY,
-        (f) => uploadFormPhotoClient(f, { skipCompress: true })
-      );
-      const failed = results.find((r) => !r.ok);
-      if (failed && !failed.ok) {
-        setError(failed.message);
+      if (!isFirebaseConfigured()) {
+        setError(
+          "Firebase가 설정되지 않았습니다. 사진은 저장 시 서버로 전송됩니다."
+        );
         return;
       }
-      const newUrls = results
-        .filter((r): r is { ok: true; url: string } => r.ok)
-        .map((r) => r.url);
-      setUrls((prev) => {
-        const merged = [...prev];
-        for (const u of newUrls) {
-          if (!merged.includes(u)) merged.push(u);
+
+      setError(null);
+      setUploading(true);
+      setUploadProgress({ done: 0, total: list.length });
+      setCleared(false);
+
+      try {
+        const { compressAndUploadFormPhoto } = await import(
+          "@/lib/uploadFormPhotoClient"
+        );
+
+        const results = await runWithConcurrency(
+          list,
+          UPLOAD_CONCURRENCY,
+          async (f) => {
+            const result = await compressAndUploadFormPhoto(f);
+            if (result.ok) {
+              appendUrl(result.url);
+            }
+            setUploadProgress((p) =>
+              p ? { done: p.done + 1, total: p.total } : null
+            );
+            return result;
+          }
+        );
+
+        const failed = results.find((r) => !r.ok);
+        if (failed && !failed.ok) {
+          setError(failed.message);
         }
-        return merged.slice(0, 20);
-      });
-    } finally {
-      setUploading(false);
-    }
-  }, []);
+      } finally {
+        setUploading(false);
+        setUploadProgress(null);
+      }
+    },
+    [appendUrl]
+  );
 
   function removeAt(index: number) {
     setUrls((prev) => prev.filter((_, i) => i !== index));
@@ -137,8 +148,10 @@ export default function FormPhotoField({
         className="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium disabled:opacity-50"
       />
 
-      {uploading ? (
-        <p className="text-xs text-zinc-600">사진 업로드 중…</p>
+      {uploading && uploadProgress ? (
+        <p className="text-xs text-zinc-600">
+          사진 업로드 중… ({uploadProgress.done}/{uploadProgress.total})
+        </p>
       ) : null}
       {error ? (
         <p className="text-xs text-red-600">{error}</p>
