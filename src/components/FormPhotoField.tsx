@@ -21,10 +21,12 @@ export default function FormPhotoField({
   removeField,
   defaultPhoto,
 }: FormPhotoFieldProps) {
-  const [urls, setUrls] = useState<string[]>(() =>
-    photoRefToUrlList(defaultPhoto)
-  );
+  const initialUrls = photoRefToUrlList(defaultPhoto);
+  const [urls, setUrls] = useState<string[]>(() => [...initialUrls]);
   const [cleared, setCleared] = useState(false);
+  /** 저장 시 서버에 「사진 삭제」를 알리기 위함 (기존 사진을 모두 지운 경우) */
+  const markRemoved =
+    cleared || (urls.length === 0 && initialUrls.length > 0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,7 +74,6 @@ export default function FormPhotoField({
 
   function removeAt(index: number) {
     setUrls((prev) => prev.filter((_, i) => i !== index));
-    setCleared(false);
   }
 
   function removeAll() {
@@ -165,7 +166,7 @@ export default function FormPhotoField({
       {urls.map((url, i) => (
         <input key={`${urlField}-${i}`} type="hidden" name={urlField} value={url} />
       ))}
-      <input type="hidden" name={removeField} value={cleared ? "1" : "0"} />
+      <input type="hidden" name={removeField} value={markRemoved ? "1" : "0"} />
 
       {urls.length > 0 ? (
         <button

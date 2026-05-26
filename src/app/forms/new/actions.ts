@@ -483,6 +483,9 @@ async function parsePhotoField(
   }
 
   const allUrls = [...validatedUrls, ...uploadedPaths];
+  if (allUrls.length === 0) {
+    return null;
+  }
   return urlsToPhotoRef(allUrls);
 }
 
