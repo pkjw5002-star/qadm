@@ -4,11 +4,16 @@ import {
   useActionState,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import { prepareFormPhotosForSubmit } from "@/lib/prepareFormPhotosForSubmit";
+import {
+  applyFormPhotoFieldsToDom,
+  hasFormPhotoFiles,
+  prepareFormPhotosForSubmit,
+} from "@/lib/prepareFormPhotosForSubmit";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -103,6 +108,7 @@ export default function NewFormClient({
   const [abTab, setAbTab] = useState<1 | 2 | 3>(1);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoSubmitError, setPhotoSubmitError] = useState<string | null>(null);
+  const submitAfterPhotoUpload = useRef(false);
 
   const base = useMemo(() => defaults ?? {}, [defaults]);
   const complaintBase = base as ComplaintFormDefaults;
@@ -186,22 +192,31 @@ export default function NewFormClient({
   const saving = pending || photoUploading;
 
   async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setPhotoSubmitError(null);
+    if (submitAfterPhotoUpload.current) {
+      submitAfterPhotoUpload.current = false;
+      return;
+    }
+
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    if (isFirebaseConfigured()) {
-      setPhotoUploading(true);
-      const prepared = await prepareFormPhotosForSubmit(formData);
-      setPhotoUploading(false);
-      if (!prepared.ok) {
-        setPhotoSubmitError(prepared.message);
-        return;
-      }
+    if (!isFirebaseConfigured() || !hasFormPhotoFiles(formData)) {
+      return;
     }
 
-    action(formData);
+    e.preventDefault();
+    setPhotoSubmitError(null);
+    setPhotoUploading(true);
+    const prepared = await prepareFormPhotosForSubmit(formData);
+    setPhotoUploading(false);
+    if (!prepared.ok) {
+      setPhotoSubmitError(prepared.message);
+      return;
+    }
+
+    applyFormPhotoFieldsToDom(form, formData);
+    submitAfterPhotoUpload.current = true;
+    form.requestSubmit();
   }
 
   return (
@@ -242,6 +257,7 @@ export default function NewFormClient({
 
       {/* 탭으로 숨긴 패널에도 required가 있으면 브라우저 기본 검증이 막을 수 있어 noValidate 후 서버(Zod) 검증 */}
       <form
+        action={action}
         onSubmit={handleFormSubmit}
         noValidate={
           isComplaint ||
