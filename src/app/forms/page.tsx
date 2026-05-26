@@ -397,6 +397,12 @@ type LatestComment = {
   actor: { name: string };
 };
 
+function trimPreviewText(text: string, max = 280): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
 /** 상세 페이지 댓글과 동일하게 COMMENT 이벤트 기준 미리보기 문구 */
 function getCommentPreview(
   latest: LatestComment | undefined,
@@ -404,7 +410,7 @@ function getCommentPreview(
 ): { line: string; tooltip: string } | null {
   if (totalCount === 0 || !latest) return null;
   const { attachments } = parseCommentPayload(latest.payload);
-  const body = commentPayloadText(latest.payload);
+  const body = trimPreviewText(commentPayloadText(latest.payload));
   const actor = latest.actor.name;
   const when = new Date(latest.createdAt).toLocaleString();
   const suffix = totalCount > 1 ? ` · ${totalCount}건` : "";
@@ -480,18 +486,16 @@ export default async function FormsPage({
   const commentCountMap = new Map<string, number>();
   if (forms.length > 0) {
     const ids = forms.map((f) => f.id);
-    const commentRows = await prisma.formEvent.findMany({
+    const commentGroups = await prisma.formEvent.groupBy({
+      by: ["formId"],
       where: {
         formId: { in: ids },
         action: "COMMENT",
       },
-      select: { formId: true },
+      _count: { _all: true },
     });
-    for (const r of commentRows) {
-      commentCountMap.set(
-        r.formId,
-        (commentCountMap.get(r.formId) ?? 0) + 1
-      );
+    for (const g of commentGroups) {
+      commentCountMap.set(g.formId, g._count._all);
     }
   }
 

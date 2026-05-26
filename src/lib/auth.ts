@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
@@ -12,7 +13,7 @@ export async function verifyPassword(password: string, passwordHash: string) {
   return bcrypt.compare(password, passwordHash);
 }
 
-export async function requireUser() {
+export const requireUser = cache(async () => {
   const session = await getSession();
   if (!session.userId) redirect("/login");
 
@@ -21,14 +22,13 @@ export async function requireUser() {
     select: { id: true, email: true, name: true, role: true },
   });
   if (!user) {
-    // Server Component에서는 쿠키 수정 불가 → Route Handler에서 destroy
     redirect("/logout");
   }
   return user;
-}
+});
 
 /** 관리자 전용 페이지. 미로그인은 `/admin/login`, 일반 사용자는 `/forms` */
-export async function requireAdmin() {
+export const requireAdmin = cache(async () => {
   const session = await getSession();
   if (!session.userId) redirect("/admin/login");
 
@@ -39,4 +39,4 @@ export async function requireAdmin() {
   if (!user) redirect("/logout");
   if (user.role !== "ADMIN") redirect("/forms");
   return user;
-}
+});

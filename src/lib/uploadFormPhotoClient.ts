@@ -29,9 +29,15 @@ function validateImageFile(file: File):
   return { ok: true, ext, mime };
 }
 
+export type UploadFormPhotoOptions = {
+  /** FormPhotoField 등에서 이미 압축한 경우 */
+  skipCompress?: boolean;
+};
+
 /** 브라우저에서 Firebase Storage로 업로드 (Vercel·배포용) */
 export async function uploadFormPhotoClient(
-  file: File
+  file: File,
+  options?: UploadFormPhotoOptions
 ): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
   const validated = validateImageFile(file);
   if (!validated.ok) return validated;
@@ -46,7 +52,9 @@ export async function uploadFormPhotoClient(
   }
 
   try {
-    const toUpload = await compressImageFile(file);
+    const toUpload = options?.skipCompress
+      ? file
+      : await compressImageFile(file);
     const storage = getStorage(app);
     const ext =
       toUpload.type === "image/png"

@@ -5,6 +5,11 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "50mb",
     },
+    optimizePackageImports: [
+      "firebase/app",
+      "firebase/storage",
+      "firebase/firestore",
+    ],
   },
   serverExternalPackages: [
     "pg",

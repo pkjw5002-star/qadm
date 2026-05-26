@@ -698,7 +698,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     let createdId: string;
     try {
       const row = await prisma.$transaction(async (tx) => {
-        const formNo = await getNextComplaintFormNo(tx.form);
+        const formNo = await getNextComplaintFormNo(tx);
         const merged = mergeComplaintPhotos(undefined, rawAttachments);
         const data = assembleComplaintFormData(
           d,
@@ -740,7 +740,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     if ("error" in photos) return { ok: false as const, message: photos.error };
 
     const d = parsed.data;
-    const formNo = await getNextQualityImprovementFormNo(prisma.form);
+    const formNo = await getNextQualityImprovementFormNo(prisma);
     const title = formNo;
     const hasReview = Boolean(
       d.qiReviewDecisionDateReason || d.qiReviewImprovementContent || photos.reviewPhoto
@@ -800,7 +800,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     if ("error" in photos) return { ok: false as const, message: photos.error };
 
     const d = parsed.data;
-    const formNo = await getNextAbnormalReportFormNo(prisma.form);
+    const formNo = await getNextAbnormalReportFormNo(prisma);
     const title = formNo;
     const hasHandling = Boolean(
       d.abPlannedDateReason ||
@@ -867,7 +867,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     if ("error" in photos) return { ok: false as const, message: photos.error };
 
     const d = parsed.data;
-    const formNo = await getNextWorkCoopFormNo(prisma.form);
+    const formNo = await getNextWorkCoopFormNo(prisma);
     const title = formNo;
     const hasHandling = Boolean(
       d.abPlannedDateReason ||
@@ -951,7 +951,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
         photos.processingPhoto
     );
 
-    const formNo = await getNextSuggestionFormNo(prisma.form);
+    const formNo = await getNextSuggestionFormNo(prisma);
     const title = formNo;
 
     const data = {

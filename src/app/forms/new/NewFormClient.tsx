@@ -7,13 +7,31 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type ReactNode,
 } from "react";
+import dynamic from "next/dynamic";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import {
   hasFormPhotoFiles,
   prepareFormPhotosForSubmit,
 } from "@/lib/prepareFormPhotosForSubmit";
-import FormPhotoField from "@/components/FormPhotoField";
+const FormPhotoField = dynamic(() => import("@/components/FormPhotoField"), {
+  ssr: false,
+  loading: () => (
+    <p className="text-xs text-zinc-500">사진 필드 불러오는 중…</p>
+  ),
+});
+
+function TabPanel({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: ReactNode;
+}) {
+  if (!active) return null;
+  return <div className="space-y-4">{children}</div>;
+}
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -410,9 +428,7 @@ export default function NewFormClient({
                 </div>
               </div>
 
-              <div
-                className={`space-y-4 ${complaintTab !== 1 ? "hidden" : ""}`}
-              >
+              <TabPanel active={complaintTab === 1}>
                 <div>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     <label className="block min-w-0">
@@ -591,11 +607,9 @@ export default function NewFormClient({
                   className="mt-1 max-h-28 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                 />
               </label>
-              </div>
+              </TabPanel>
 
-              <div
-                className={`space-y-4 ${complaintTab !== 2 ? "hidden" : ""}`}
-              >
+              <TabPanel active={complaintTab === 2}>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
                   <label className="block min-w-0 lg:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
@@ -669,11 +683,9 @@ export default function NewFormClient({
                   removeField="outsideAsPhotoRemove"
                   defaultPhoto={complaintBase.outsideAsPhoto}
                 />
-              </div>
+              </TabPanel>
 
-              <div
-                className={`space-y-4 ${complaintTab !== 3 ? "hidden" : ""}`}
-              >
+              <TabPanel active={complaintTab === 3}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
                   <label className="block min-w-0">
                     <span className="text-sm font-medium text-zinc-800">
@@ -766,11 +778,9 @@ export default function NewFormClient({
                   removeField="prodRecurrenceRefPhotoRemove"
                   defaultPhoto={complaintBase.prodRecurrenceRefPhoto}
                 />
-              </div>
+              </TabPanel>
 
-              <div
-                className={`space-y-4 ${complaintTab !== 4 ? "hidden" : ""}`}
-              >
+              <TabPanel active={complaintTab === 4}>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="block min-w-0">
                     <span className="text-sm font-medium text-zinc-800">
@@ -837,11 +847,9 @@ export default function NewFormClient({
                   removeField="labRecurrenceRefPhotoRemove"
                   defaultPhoto={complaintBase.labRecurrenceRefPhoto}
                 />
-              </div>
+              </TabPanel>
 
-              <div
-                className={`space-y-4 ${complaintTab !== 5 ? "hidden" : ""}`}
-              >
+              <TabPanel active={complaintTab === 5}>
                 <label className="block">
                   <span className="text-sm font-medium text-zinc-800">
                     처리일자
@@ -885,7 +893,7 @@ export default function NewFormClient({
                     placeholder="처리 절차·비고 등 상세 기술"
                   />
                 </label>
-              </div>
+              </TabPanel>
             </section>
           ) : isQualityImprovement ? (
             <section className="space-y-4">
@@ -914,7 +922,7 @@ export default function NewFormClient({
                 </div>
               </div>
 
-              <div className={`space-y-4 ${qiTab !== 1 ? "hidden" : ""}`}>
+              <TabPanel active={qiTab === 1}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1015,9 +1023,9 @@ export default function NewFormClient({
                   removeField="qiReceiptPhotoRemove"
                   defaultPhoto={qiBase.qiReceiptPhoto}
                 />
-              </div>
+              </TabPanel>
 
-              <div className={`space-y-4 ${qiTab !== 2 ? "hidden" : ""}`}>
+              <TabPanel active={qiTab === 2}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1065,9 +1073,9 @@ export default function NewFormClient({
                   removeField="qiReviewPhotoRemove"
                   defaultPhoto={qiBase.qiReviewPhoto}
                 />
-              </div>
+              </TabPanel>
 
-              <div className={`space-y-4 ${qiTab !== 3 ? "hidden" : ""}`}>
+              <TabPanel active={qiTab === 3}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1094,7 +1102,7 @@ export default function NewFormClient({
                     />
                   </label>
                 </div>
-              </div>
+              </TabPanel>
             </section>
           ) : isSuggestion ? (
             <section className="space-y-4">
@@ -1122,7 +1130,7 @@ export default function NewFormClient({
                 </div>
               </div>
 
-              <div className={`space-y-4 ${sgTab !== 1 ? "hidden" : ""}`}>
+              <TabPanel active={sgTab === 1}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1205,9 +1213,9 @@ export default function NewFormClient({
                     placeholder="기대 효과·개선 효과 등을 입력"
                   />
                 </label>
-              </div>
+              </TabPanel>
 
-              <div className={`space-y-4 ${sgTab !== 2 ? "hidden" : ""}`}>
+              <TabPanel active={sgTab === 2}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1284,7 +1292,7 @@ export default function NewFormClient({
                   removeField="sgProcessingPhotoRemove"
                   defaultPhoto={sgBase.sgProcessingPhoto}
                 />
-              </div>
+              </TabPanel>
             </section>
           ) : isAbLike ? (
             <section className="space-y-4">
@@ -1323,7 +1331,7 @@ export default function NewFormClient({
                 </div>
               </div>
 
-              <div className={`space-y-4 ${abTab !== 1 ? "hidden" : ""}`}>
+              <TabPanel active={abTab === 1}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-2">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1434,9 +1442,9 @@ export default function NewFormClient({
                   removeField="abReportPhotoRemove"
                   defaultPhoto={abBase.abReportPhoto}
                 />
-              </div>
+              </TabPanel>
 
-              <div className={`space-y-4 ${abTab !== 2 ? "hidden" : ""}`}>
+              <TabPanel active={abTab === 2}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1494,9 +1502,9 @@ export default function NewFormClient({
                   removeField="abHandlingPhotoRemove"
                   defaultPhoto={abBase.abHandlingPhoto}
                 />
-              </div>
+              </TabPanel>
 
-              <div className={`space-y-4 ${abTab !== 3 ? "hidden" : ""}`}>
+              <TabPanel active={abTab === 3}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                   <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
@@ -1523,7 +1531,7 @@ export default function NewFormClient({
                     />
                   </label>
                 </div>
-              </div>
+              </TabPanel>
             </section>
           ) : (
             <>

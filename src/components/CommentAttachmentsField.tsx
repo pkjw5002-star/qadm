@@ -13,9 +13,10 @@ import {
   COMMENT_ATTACHMENT_URL_FIELD,
 } from "@/lib/prepareCommentAttachmentsForSubmit";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import { uploadCommentAttachmentClient } from "@/lib/uploadCommentAttachmentClient";
+import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
 const MAX_ATTACHMENTS = 10;
+const UPLOAD_CONCURRENCY = 3;
 
 export default function CommentAttachmentsField() {
   const [items, setItems] = useState<CommentAttachmentMeta[]>([]);
@@ -37,8 +38,13 @@ export default function CommentAttachmentsField() {
     setUploading(true);
 
     try {
-      const results = await Promise.all(
-        list.map((f) => uploadCommentAttachmentClient(f))
+      const { uploadCommentAttachmentClient } = await import(
+        "@/lib/uploadCommentAttachmentClient"
+      );
+      const results = await runWithConcurrency(
+        list,
+        UPLOAD_CONCURRENCY,
+        (f) => uploadCommentAttachmentClient(f)
       );
       const failed = results.find((r) => !r.ok);
       if (failed && !failed.ok) {

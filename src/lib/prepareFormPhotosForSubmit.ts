@@ -1,6 +1,8 @@
 import { FORM_PHOTO_FIELD_PAIRS } from "@/lib/formPhotoFields";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import { uploadFormPhotoClient } from "@/lib/uploadFormPhotoClient";
+import { runWithConcurrency } from "@/lib/runWithConcurrency";
+
+const UPLOAD_CONCURRENCY = 3;
 
 export function hasFormPhotoFiles(formData: FormData): boolean {
   return FORM_PHOTO_FIELD_PAIRS.some(({ fileField }) => {
@@ -40,34 +42,34 @@ export async function prepareFormPhotosForSubmit(
     return { ok: true };
   }
 
-  const uploads: Promise<
-    | { ok: true; urlField: string; url: string; fileField: string }
-    | { ok: false; message: string }
-  >[] = [];
-
+  const pending: { file: File; urlField: string; fileField: string }[] = [];
   for (const { fileField, urlField } of FORM_PHOTO_FIELD_PAIRS) {
     for (const entry of formData.getAll(fileField)) {
       if (!(entry instanceof File) || entry.size === 0) continue;
-      uploads.push(
-        uploadFormPhotoClient(entry).then((result) =>
-          result.ok
-            ? { ok: true as const, urlField, url: result.url, fileField }
-            : result
-        )
-      );
+      pending.push({ file: entry, urlField, fileField });
     }
   }
 
-  if (uploads.length === 0) return { ok: true };
+  if (pending.length === 0) return { ok: true };
 
-  const results = await Promise.all(uploads);
-  for (const result of results) {
-    if (!result.ok) return result;
-    const existing = formData.getAll(result.urlField).map(String);
-    if (!existing.includes(result.url)) {
-      formData.append(result.urlField, result.url);
+  const { uploadFormPhotoClient } = await import("@/lib/uploadFormPhotoClient");
+
+  const results = await runWithConcurrency(
+    pending,
+    UPLOAD_CONCURRENCY,
+    async ({ file, urlField, fileField }) => {
+      const result = await uploadFormPhotoClient(file);
+      return { result, urlField, fileField };
     }
-    formData.delete(result.fileField);
+  );
+
+  for (const { result, urlField, fileField } of results) {
+    if (!result.ok) return result;
+    const existing = formData.getAll(urlField).map(String);
+    if (!existing.includes(result.url)) {
+      formData.append(urlField, result.url);
+    }
+    formData.delete(fileField);
   }
 
   return { ok: true };

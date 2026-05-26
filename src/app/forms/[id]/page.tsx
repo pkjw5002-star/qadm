@@ -92,15 +92,15 @@ export default async function FormDetailPage({
     include: {
       createdBy: { select: { name: true, email: true } },
       events: {
+        where: { action: "COMMENT" },
         orderBy: { createdAt: "desc" },
-        take: 100,
+        take: 50,
         include: { actor: { select: { name: true } } },
       },
     },
   });
   if (!form) notFound();
   const comments = form.events
-    .filter((e) => e.action === "COMMENT")
     .slice()
     .reverse()
     .map((e) => {

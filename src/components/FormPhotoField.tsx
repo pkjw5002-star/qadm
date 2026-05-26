@@ -4,7 +4,9 @@ import { useCallback, useState } from "react";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { compressImageFile } from "@/lib/compressImageFile";
 import { photoRefToUrlList, type PhotoRef } from "@/lib/photoRef";
-import { uploadFormPhotoClient } from "@/lib/uploadFormPhotoClient";
+import { runWithConcurrency } from "@/lib/runWithConcurrency";
+
+const UPLOAD_CONCURRENCY = 3;
 
 type FormPhotoFieldProps = {
   label?: string;
@@ -24,7 +26,6 @@ export default function FormPhotoField({
   const initialUrls = photoRefToUrlList(defaultPhoto);
   const [urls, setUrls] = useState<string[]>(() => [...initialUrls]);
   const [cleared, setCleared] = useState(false);
-  /** 저장 시 서버에 「사진 삭제」를 알리기 위함 (기존 사진을 모두 지운 경우) */
   const markRemoved =
     cleared || (urls.length === 0 && initialUrls.length > 0);
   const [uploading, setUploading] = useState(false);
@@ -46,11 +47,18 @@ export default function FormPhotoField({
     setCleared(false);
 
     try {
-      const compressed = await Promise.all(
-        list.map((f) => compressImageFile(f))
+      const compressed = await runWithConcurrency(
+        list,
+        UPLOAD_CONCURRENCY,
+        (f) => compressImageFile(f)
       );
-      const results = await Promise.all(
-        compressed.map((f) => uploadFormPhotoClient(f))
+      const { uploadFormPhotoClient } = await import(
+        "@/lib/uploadFormPhotoClient"
+      );
+      const results = await runWithConcurrency(
+        compressed,
+        UPLOAD_CONCURRENCY,
+        (f) => uploadFormPhotoClient(f, { skipCompress: true })
       );
       const failed = results.find((r) => !r.ok);
       if (failed && !failed.ok) {

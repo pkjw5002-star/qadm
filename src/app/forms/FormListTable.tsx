@@ -11,11 +11,7 @@ import {
 } from "react";
 import { useFormsUserId } from "@/app/forms/FormsUserContext";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import {
-  loadFormListLayout,
-  saveFormListLayout,
-  type FormListLayoutPersisted,
-} from "@/lib/formListLayoutStore";
+import type { FormListLayoutPersisted } from "@/lib/formListLayoutStore";
 import type { FormListColumn, FormListRow } from "./formListTableTypes";
 
 export type { FormListColumn, FormListRow } from "./formListTableTypes";
@@ -170,10 +166,23 @@ export default function FormListTable({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {}
   );
+  const [debouncedColumnFilters, setDebouncedColumnFilters] = useState<
+    Record<string, string>
+  >({});
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedColumnFilters(columnFilters);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [columnFilters]);
 
   const filteredRows = useMemo(
-    () => rows.filter((r) => rowMatchesColumnFilters(r, columns, columnFilters)),
-    [rows, columns, columnFilters]
+    () =>
+      rows.filter((r) =>
+        rowMatchesColumnFilters(r, columns, debouncedColumnFilters)
+      ),
+    [rows, columns, debouncedColumnFilters]
   );
 
   const hasActiveSearch = useMemo(
@@ -198,9 +207,15 @@ export default function FormListTable({
     let cancelled = false;
 
     async function loadLayout() {
-      let p: FormListLayoutPersisted = {};
+      let p: FormListLayoutPersisted = loadLegacyLocalStorage(storageKey);
       if (userId && isFirebaseConfigured()) {
-        p = await loadFormListLayout(userId, storageKey);
+        const { loadFormListLayout } = await import(
+          "@/lib/formListLayoutStore"
+        );
+        const remote = await loadFormListLayout(userId, storageKey);
+        if (remote.widths || remote.hidden) {
+          p = remote;
+        }
         if (
           !p.widths &&
           !p.hidden &&
@@ -209,6 +224,9 @@ export default function FormListTable({
           const legacy = loadLegacyLocalStorage(storageKey);
           if (legacy.widths || legacy.hidden) {
             p = legacy;
+            const { saveFormListLayout } = await import(
+              "@/lib/formListLayoutStore"
+            );
             void saveFormListLayout(userId, storageKey, legacy);
             try {
               localStorage.removeItem(storageKey);
@@ -268,7 +286,9 @@ export default function FormListTable({
 
       if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
       persistTimerRef.current = setTimeout(() => {
-        void saveFormListLayout(userId, storageKey, payload);
+        void import("@/lib/formListLayoutStore").then(({ saveFormListLayout }) =>
+          saveFormListLayout(userId, storageKey, payload)
+        );
       }, 400);
     },
     [storageKey, colIds, defaults.widths, userId]

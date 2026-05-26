@@ -66,6 +66,7 @@ model Form {
   events FormEvent[]
 
   @@index([type, status])
+  @@index([type, createdAt])
   @@index([createdById, createdAt])
 }
 
@@ -83,7 +84,14 @@ model FormEvent {
   actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
 
   @@index([formId, createdAt])
+  @@index([formId, action, createdAt])
   @@index([actorId, createdAt])
+}
+
+/** 서식 번호 전역 시퀀스 (불/품/이/협/제 공통) */
+model FormNumberSequence {
+  id    String @id
+  value Int    @default(0)
 }
 
 model DepartmentOwnerOption {
