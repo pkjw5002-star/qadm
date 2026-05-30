@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { preload } from "react-dom";
 import FormPhotoGallery from "@/components/FormPhotoGallery";
-import { parseCommentPayload } from "@/lib/commentPayload";
 import { heroFormPhotoUrls } from "@/lib/collectFormPhotoUrls";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { formListHref } from "@/lib/formTypes";
-import CommentsPanel from "@/app/forms/[id]/CommentsPanel";
 import DeleteFormForm from "@/app/forms/[id]/DeleteFormForm";
+import {
+  CommentsPanelSkeleton,
+  FormDetailComments,
+} from "@/app/forms/[id]/FormDetailComments";
 
 function DetailBlock({
   label,
@@ -89,12 +91,6 @@ export async function FormDetailBody({ id }: { id: string }) {
     where: { id },
     include: {
       createdBy: { select: { name: true, email: true } },
-      events: {
-        where: { action: "COMMENT" },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-        include: { actor: { select: { name: true } } },
-      },
     },
   });
   if (!form) notFound();
@@ -102,21 +98,6 @@ export async function FormDetailBody({ id }: { id: string }) {
   for (const url of heroFormPhotoUrls(form.type, form.data)) {
     preload(url, { as: "image" });
   }
-
-  const comments = form.events
-    .slice()
-    .reverse()
-    .map((e) => {
-      const { text, attachments } = parseCommentPayload(e.payload);
-      return {
-        id: e.id,
-        text,
-        attachments,
-        actorName: e.actor.name,
-        createdAt: new Date(e.createdAt).toLocaleString(),
-      };
-    })
-    .filter((c) => c.text !== "" || c.attachments.length > 0);
 
   const data = form.data as {
     summary?: unknown;
@@ -1168,7 +1149,9 @@ export async function FormDetailBody({ id }: { id: string }) {
           </div>
         </section>
 
-        <CommentsPanel formId={form.id} comments={comments} />
+        <Suspense fallback={<CommentsPanelSkeleton />}>
+          <FormDetailComments formId={form.id} />
+        </Suspense>
       </div>
     </div>
   );

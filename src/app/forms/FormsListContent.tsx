@@ -18,6 +18,7 @@ import type { FormListRow } from "@/app/forms/formListTableTypes";
 import { getCommentPreview } from "@/lib/formListComment";
 import {
   complaintRowFromSnapshot,
+  isStoredListSnapshotValid,
   resolveListSnapshot,
   reviewFilterRowFromSnapshot,
 } from "@/lib/formListSnapshot";
@@ -58,8 +59,9 @@ export default async function FormsListContent({
       status: true,
       title: true,
       createdAt: true,
+      commentCount: true,
       createdBy: { select: { name: true } },
-      ...(isTypedList ? { listSnapshot: true, data: true } : {}),
+      ...(isTypedList ? { listSnapshot: true } : {}),
       events: {
         where: { action: "COMMENT" },
         orderBy: { createdAt: "desc" },
@@ -73,19 +75,19 @@ export default async function FormsListContent({
     },
   });
 
-  const commentCountMap = new Map<string, number>();
-  if (forms.length > 0) {
-    const ids = forms.map((f) => f.id);
-    const commentGroups = await prisma.formEvent.groupBy({
-      by: ["formId"],
-      where: {
-        formId: { in: ids },
-        action: "COMMENT",
-      },
-      _count: { _all: true },
-    });
-    for (const g of commentGroups) {
-      commentCountMap.set(g.formId, g._count._all);
+  const dataByFormId = new Map<string, unknown>();
+  if (isTypedList && forms.length > 0) {
+    const missingIds = forms
+      .filter((f) => !isStoredListSnapshotValid(f.type, f.listSnapshot))
+      .map((f) => f.id);
+    if (missingIds.length > 0) {
+      const fallbackRows = await prisma.form.findMany({
+        where: { id: { in: missingIds } },
+        select: { id: true, data: true },
+      });
+      for (const row of fallbackRows) {
+        dataByFormId.set(row.id, row.data);
+      }
     }
   }
 
@@ -94,17 +96,14 @@ export default async function FormsListContent({
         if (!isTypedList) return [];
         const snap = resolveListSnapshot({
           type: f.type,
-          data: f.data,
+          data: dataByFormId.get(f.id),
           title: f.title,
           authorName: f.createdBy.name,
           createdAt: f.createdAt,
           listSnapshot: f.listSnapshot,
         });
         if (!snap || snap.kind !== "COMPLAINT") return [];
-        const preview = getCommentPreview(
-          f.events[0],
-          commentCountMap.get(f.id) ?? 0
-        );
+        const preview = getCommentPreview(f.events[0], f.commentCount);
         return [
           complaintRowFromSnapshot(f.id, snap, {
             line: preview?.line ?? null,
@@ -119,17 +118,14 @@ export default async function FormsListContent({
       if (!isTypedList) return [];
       const snap = resolveListSnapshot({
         type: f.type,
-        data: f.data,
+        data: dataByFormId.get(f.id),
         title: f.title,
         authorName: f.createdBy.name,
         createdAt: f.createdAt,
         listSnapshot: f.listSnapshot,
       });
       if (!snap || snap.kind !== "REVIEW_FILTER") return [];
-      const preview = getCommentPreview(
-        f.events[0],
-        commentCountMap.get(f.id) ?? 0
-      );
+      const preview = getCommentPreview(f.events[0], f.commentCount);
       return [
         reviewFilterRowFromSnapshot(f.id, snap, {
           line: preview?.line ?? null,
@@ -211,14 +207,12 @@ export default async function FormsListContent({
       ) : (
         <ul className="divide-y divide-zinc-100">
           {forms.map((f) => {
-            const commentCp = getCommentPreview(
-              f.events[0],
-              commentCountMap.get(f.id) ?? 0
-            );
+            const commentCp = getCommentPreview(f.events[0], f.commentCount);
             return (
               <li key={f.id} className="px-4 py-3 hover:bg-zinc-50">
                 <Link
                   href={`/forms/${f.id}`}
+                  prefetch
                   className="grid grid-cols-12 gap-2"
                 >
                   <div className="col-span-2 text-sm text-zinc-800">

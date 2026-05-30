@@ -58,6 +58,8 @@ model Form {
   data Json
   /** 목록 표용 슬림 JSON (사진 URL·긴 본문 제외). 저장/수정 시 갱신 */
   listSnapshot Json?
+  /** 목록 댓글 미리보기용 (COMMENT 이벤트 수) */
+  commentCount Int @default(0)
 
   createdById String
   createdBy   User   @relation("FormCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)

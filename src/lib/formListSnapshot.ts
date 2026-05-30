@@ -556,6 +556,15 @@ function expectedSnapshotKind(type: FormType): StoredListSnapshot["kind"] {
   return type === "COMPLAINT" ? "COMPLAINT" : "REVIEW_FILTER";
 }
 
+export function isStoredListSnapshotValid(
+  type: FormType,
+  listSnapshot: unknown
+): boolean {
+  const parsed = parseStoredSnapshot(listSnapshot);
+  if (!parsed) return false;
+  return parsed.kind === expectedSnapshotKind(type);
+}
+
 export function resolveListSnapshot(
   params: {
     type: FormType;

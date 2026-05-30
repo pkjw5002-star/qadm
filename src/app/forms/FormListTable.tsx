@@ -5,10 +5,12 @@ import type { ReactNode } from "react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useFormsUserId } from "@/app/forms/FormsUserContext";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import type { FormListLayoutPersisted } from "@/lib/formListLayoutStore";
@@ -47,6 +49,7 @@ function buildDefaults(columns: readonly FormListColumn[]) {
 }
 
 const NON_HIDE = new Set(["no"]);
+const VIRTUAL_ROW_THRESHOLD = 20;
 
 const STICKY_NO_SHADOW =
   "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]";
@@ -308,6 +311,36 @@ export default function FormListTable({
     [visibleCols, widths]
   );
 
+  const useVirtualRows = filteredRows.length > VIRTUAL_ROW_THRESHOLD;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: useVirtualRows ? filteredRows.length : 0,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 52,
+    overscan: 8,
+  });
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const padTop =
+    useVirtualRows && virtualItems.length > 0 ? virtualItems[0]!.start : 0;
+  const padBottom =
+    useVirtualRows && virtualItems.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1]!.end
+      : 0;
+
+  useLayoutEffect(() => {
+    if (useVirtualRows) rowVirtualizer.measure();
+  }, [useVirtualRows, filteredRows.length, rowVirtualizer]);
+
+  const bodyRowIndices = useMemo(() => {
+    if (!useVirtualRows) {
+      return filteredRows.map((_, index) => index);
+    }
+    if (virtualItems.length === 0) {
+      return filteredRows.map((_, index) => index);
+    }
+    return virtualItems.map((item) => item.index);
+  }, [filteredRows, useVirtualRows, virtualItems]);
+
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const d = dragRef.current;
@@ -506,7 +539,10 @@ export default function FormListTable({
         </p>
       ) : null}
 
-      <div className="relative max-h-[min(70vh,720px)] overflow-auto overscroll-contain">
+      <div
+        ref={scrollRef}
+        className="relative max-h-[min(70vh,720px)] overflow-auto overscroll-contain"
+      >
         <table
           className="border-separate border-spacing-0 text-sm"
           style={{
@@ -601,7 +637,16 @@ export default function FormListTable({
                 </td>
               </tr>
             ) : null}
-            {filteredRows.map((row) => {
+            {useVirtualRows && padTop > 0 ? (
+              <tr aria-hidden>
+                <td
+                  colSpan={Math.max(visibleCols.length, 1)}
+                  style={{ height: padTop, padding: 0, border: 0 }}
+                />
+              </tr>
+            ) : null}
+            {bodyRowIndices.map((rowIndex) => {
+              const row = filteredRows[rowIndex]!;
               const hp = row.highlightPending === true;
               const bodyClass = hp ? "text-blue-600" : "text-zinc-800";
               const mutedClass = hp ? "text-blue-500" : "text-zinc-500";
@@ -613,6 +658,12 @@ export default function FormListTable({
               return (
               <tr
                 key={row.id}
+                ref={
+                  useVirtualRows && virtualItems.length > 0
+                    ? rowVirtualizer.measureElement
+                    : undefined
+                }
+                data-index={rowIndex}
                 className="group hover:bg-zinc-50"
               >
                 {visibleCols.map((id) => {
@@ -631,6 +682,7 @@ export default function FormListTable({
                       >
                         <Link
                           href={`/forms/${row.id}`}
+                          prefetch
                           title={label !== "—" ? label : undefined}
                           className={`block truncate whitespace-nowrap font-medium hover:underline ${strongClass}`}
                         >
@@ -722,6 +774,14 @@ export default function FormListTable({
               </tr>
               );
             })}
+            {useVirtualRows && padBottom > 0 ? (
+              <tr aria-hidden>
+                <td
+                  colSpan={Math.max(visibleCols.length, 1)}
+                  style={{ height: padBottom, padding: 0, border: 0 }}
+                />
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>

@@ -56,19 +56,26 @@ export async function addFormCommentAction(formData: FormData) {
     redirect(`/forms/${formId}`);
   }
 
-  await prisma.formEvent.create({
-    data: {
-      formId,
-      actorId: user.id,
-      action: "COMMENT",
-      payload: {
-        text,
-        ...(attachments.length > 0 ? { attachments } : {}),
-      } as Prisma.InputJsonValue,
-    },
-  });
+  await prisma.$transaction([
+    prisma.formEvent.create({
+      data: {
+        formId,
+        actorId: user.id,
+        action: "COMMENT",
+        payload: {
+          text,
+          ...(attachments.length > 0 ? { attachments } : {}),
+        } as Prisma.InputJsonValue,
+      },
+    }),
+    prisma.form.update({
+      where: { id: formId },
+      data: { commentCount: { increment: 1 } },
+    }),
+  ]);
 
   revalidatePath(`/forms/${formId}`);
+  revalidatePath("/forms");
   redirect(`/forms/${formId}`);
 }
 
