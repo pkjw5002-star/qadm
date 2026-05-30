@@ -9,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { useFormsUserId } from "@/app/forms/FormsUserContext";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import type { FormListLayoutPersisted } from "@/lib/formListLayoutStore";
@@ -309,20 +308,6 @@ export default function FormListTable({
     [visibleCols, widths]
   );
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const rowVirtualizer = useVirtualizer({
-    count: filteredRows.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 52,
-    overscan: 10,
-  });
-  const virtualRows = rowVirtualizer.getVirtualItems();
-  const padTop = virtualRows.length > 0 ? virtualRows[0]!.start : 0;
-  const padBottom =
-    virtualRows.length > 0
-      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1]!.end
-      : 0;
-
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const d = dragRef.current;
@@ -521,10 +506,7 @@ export default function FormListTable({
         </p>
       ) : null}
 
-      <div
-        ref={scrollRef}
-        className="relative max-h-[min(70vh,720px)] overflow-auto overscroll-contain"
-      >
+      <div className="relative max-h-[min(70vh,720px)] overflow-auto overscroll-contain">
         <table
           className="border-separate border-spacing-0 text-sm"
           style={{
@@ -619,16 +601,7 @@ export default function FormListTable({
                 </td>
               </tr>
             ) : null}
-            {padTop > 0 ? (
-              <tr aria-hidden>
-                <td
-                  colSpan={Math.max(visibleCols.length, 1)}
-                  style={{ height: padTop, padding: 0, border: 0 }}
-                />
-              </tr>
-            ) : null}
-            {virtualRows.map((virtualRow) => {
-              const row = filteredRows[virtualRow.index]!;
+            {filteredRows.map((row) => {
               const hp = row.highlightPending === true;
               const bodyClass = hp ? "text-blue-600" : "text-zinc-800";
               const mutedClass = hp ? "text-blue-500" : "text-zinc-500";
@@ -640,8 +613,6 @@ export default function FormListTable({
               return (
               <tr
                 key={row.id}
-                ref={rowVirtualizer.measureElement}
-                data-index={virtualRow.index}
                 className="group hover:bg-zinc-50"
               >
                 {visibleCols.map((id) => {
@@ -751,14 +722,6 @@ export default function FormListTable({
               </tr>
               );
             })}
-            {padBottom > 0 ? (
-              <tr aria-hidden>
-                <td
-                  colSpan={Math.max(visibleCols.length, 1)}
-                  style={{ height: padBottom, padding: 0, border: 0 }}
-                />
-              </tr>
-            ) : null}
           </tbody>
         </table>
       </div>

@@ -552,6 +552,10 @@ export function buildListSnapshot(params: {
   return null;
 }
 
+function expectedSnapshotKind(type: FormType): StoredListSnapshot["kind"] {
+  return type === "COMPLAINT" ? "COMPLAINT" : "REVIEW_FILTER";
+}
+
 export function resolveListSnapshot(
   params: {
     type: FormType;
@@ -562,8 +566,9 @@ export function resolveListSnapshot(
     listSnapshot: unknown;
   }
 ): StoredListSnapshot | null {
+  const expected = expectedSnapshotKind(params.type);
   const parsed = parseStoredSnapshot(params.listSnapshot);
-  if (parsed) return parsed;
+  if (parsed && parsed.kind === expected) return parsed;
   return buildListSnapshot(params);
 }
 

@@ -143,6 +143,18 @@ export default async function FormsListContent({
   const workCoopRows = isWorkCoopList ? mapReviewRows() : [];
   const suggestionRows = isSuggestionList ? mapReviewRows() : [];
 
+  const isEmpty = isComplaintList
+    ? complaintRows.length === 0
+    : isQualityImprovementList
+      ? qualityRows.length === 0
+      : isAbnormalList
+        ? abnormalRows.length === 0
+        : isWorkCoopList
+          ? workCoopRows.length === 0
+          : isSuggestionList
+            ? suggestionRows.length === 0
+            : forms.length === 0;
+
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white">
       {!isTypedList ? (
@@ -156,9 +168,11 @@ export default async function FormsListContent({
         </div>
       ) : null}
 
-      {forms.length === 0 ? (
+      {isEmpty ? (
         <div className="px-4 py-10 text-center text-sm text-zinc-600">
-          아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요.
+          {isTypedList && forms.length > 0
+            ? "목록 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요."
+            : "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."}
         </div>
       ) : isComplaintList ? (
         <ComplaintFormsTable rows={complaintRows} />
