@@ -51,34 +51,110 @@ Firebase Storage 화면에는 Location이 잘 안 보일 때가 많아, **GCP �
 
 ## 2단계: CORS 설정 (브라우저 업로드 필수)
 
-GCP에서 직접 만든 버킷은 **CORS**가 없으면 브라우저 업로드가 실패할 수 있습니다.
+GCP에서 직접 만든 버킷은 **CORS**가 없으면 브라우저에서 `storage/unauthorized` 또는 CORS 오류가 납니다.
 
-프로젝트 루트에 `storage.cors.json`이 있습니다.
+> **로컬 PC에 `gcloud`가 없어도 됩니다.** (PowerShell에서 `gcloud` 명령이 안 되는 것은 정상)  
+> 아래 **방법 A(콘솔 UI)** 또는 **방법 B(Cloud Shell 붙여넣기)** 만 쓰세요.
 
-### 방법 A — Google Cloud Shell (콘솔 클릭)
+---
 
-1. GCP 콘솔 우측 상단 **`>_` (Activate Cloud Shell)** 클릭
-2. Cloud Shell에서 QADM repo 내용을 붙여넣거나, 아래 한 줄 실행 (버킷 이름만 맞으면 됨):
+### 방법 A — GCP 콘솔 UI (가장 쉬움, gcloud 불필요)
+
+1. 버킷 **Configuration** 탭 열기:  
+   https://console.cloud.google.com/storage/browser/qadm-29e97-asia-ne3;tab=configuration?project=qadm-29e97
+
+2. 아래로 스크롤 → **Cross-origin resource sharing (CORS)** 섹션
+
+3. **Edit CORS configuration** (또는 **Edit cross-origin resource sharing**) 클릭
+
+4. **Allow cross-origin resource sharing** 체크
+
+5. **Add a configuration** → 아래 값 입력:
+
+| 필드 | 입력 값 |
+|------|---------|
+| **List of allowed origins** | 한 줄에 하나씩 3개 추가 |
+| | `http://localhost:3000` |
+| | `https://qadm.vercel.app` |
+| | `https://*.vercel.app` |
+| **Specify methods** | `GET`, `HEAD`, `PUT`, `POST`, `DELETE`, `OPTIONS` 전부 선택 |
+| **List of allowed response headers** | 한 줄에 하나씩 추가 |
+| | `Content-Type` |
+| | `Content-Range` |
+| | `Content-Length` |
+| | `Authorization` |
+| | `x-goog-resumable` |
+| **Cache expiry time** | `3600` |
+
+6. **Done** → **Save**
+
+7. 저장 후 같은 화면에서 CORS 설정이 보이면 성공.
+
+**Configuration 탭에 CORS가 안 보일 때**
+
+- 버킷 목록에서 `qadm-29e97-asia-ne3` **이름 클릭** → 상단 **Configuration** 탭
+- 또는 **⋮ (더보기) → Edit bucket** 안에 CORS 항목 확인
+
+---
+
+### 방법 B — Cloud Shell (복사·붙여넣기 한 번)
+
+로컬에 `storage.cors.json`이 없어도 됩니다. **아래 블록 전체**를 Cloud Shell에 붙여넣고 Enter.
+
+1. GCP 콘솔 우측 상단 **`>_` Activate Cloud Shell** 클릭 (처음이면 권한 허용)
+2. 아래 **전체** 복사 → Shell에 붙여넣기 → Enter
 
 ```bash
+cat > /tmp/qadm-cors.json << 'EOF'
+[
+  {
+    "origin": [
+      "http://localhost:3000",
+      "https://qadm.vercel.app",
+      "https://*.vercel.app"
+    ],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Range",
+      "Content-Length",
+      "Authorization",
+      "x-goog-resumable"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
+EOF
+
 gcloud storage buckets update gs://qadm-29e97-asia-ne3 \
-  --cors-file=storage.cors.json \
+  --cors-file=/tmp/qadm-cors.json \
   --project=qadm-29e97
+
+gcloud storage buckets describe gs://qadm-29e97-asia-ne3 \
+  --project=qadm-29e97 \
+  --format="json(cors_config)"
 ```
 
-`storage.cors.json` 파일이 Shell에 없으면, 로컬 PC PowerShell에서 (gcloud CLI 설치·로그인 후):
+3. 마지막 줄에 `"cors_config": [...]` 내용이 출력되면 성공.
+
+**Cloud Shell 오류**
+
+| 메시지 | 해결 |
+|--------|------|
+| `Bucket not found` | 1단계에서 버킷 이름이 `qadm-29e97-asia-ne3`인지 확인 |
+| `Permission denied` | 로그인 Google 계정이 Firebase 프로젝트 **Owner/Editor**인지 확인 |
+| `gcloud: command not found` | Shell 창이 아니라 로컬 PowerShell에서 실행한 것 — Shell에서 다시 |
+
+---
+
+### (참고) 로컬 PowerShell — gcloud 설치된 PC만
 
 ```powershell
 cd C:\Users\박정우\Desktop\QADM\qadm
 gcloud storage buckets update gs://qadm-29e97-asia-ne3 --cors-file=storage.cors.json --project=qadm-29e97
 ```
 
-### 방법 B — GCP 콘솔 UI
-
-1. https://console.cloud.google.com/storage/browser/qadm-29e97-asia-ne3?project=qadm-29e97
-2. 상단 **Permissions** / **Configuration** 근처 **CORS** (또는 버킷 **⋮ → Edit bucket**)
-3. `storage.cors.json` 내용 붙여넣기 → 저장  
-   (UI에 CORS가 없으면 방법 A 사용)
+`gcloud`가 없다고 나오면 **방법 A 또는 B**를 쓰세요.
 
 ---
 
