@@ -40,6 +40,7 @@ function loadEnvFile(name) {
 
 const KEYS = [
   "DATABASE_URL",
+  "DIRECT_URL",
   "SESSION_PASSWORD",
   "NEXT_PUBLIC_FIREBASE_API_KEY",
   "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
