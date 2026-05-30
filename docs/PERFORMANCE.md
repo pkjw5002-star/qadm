@@ -30,6 +30,18 @@ Neon 대시보드 → Connect → **Connection pooling** / **Pooled**
 
 - Neon URL이면 `@prisma/adapter-neon` 사용 (TCP `pg`보다 서버리스에 유리)
 - Prisma 클라이언트는 인스턴스당 한 번만 생성 (global 캐시)
+- **서식 목록**: `Form.listSnapshot` 슬림 JSON + Suspense 스트리밍 + 표 행 가상화
+- 목록 저장/수정 시 `listSnapshot` 자동 갱신
+
+### listSnapshot 백필 (배포 후 1회)
+
+마이그레이션만 적용하고 예전 서식이 있으면:
+
+```bash
+npm run backfill:list-snapshot
+```
+
+이후 타입별 목록은 DB에서 큰 `data` JSON 대신 `listSnapshot`만 읽습니다.
 
 ## 더 빨리 하고 싶을 때 (나중에)
 

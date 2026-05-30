@@ -56,6 +56,8 @@ model Form {
   title String
   // Flexible payload for per-form fields. Keep a stable contract per FormType in the UI.
   data Json
+  /** 목록 표용 슬림 JSON (사진 URL·긴 본문 제외). 저장/수정 시 갱신 */
+  listSnapshot Json?
 
   createdById String
   createdBy   User   @relation("FormCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)

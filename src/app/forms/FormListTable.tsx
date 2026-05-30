@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useFormsUserId } from "@/app/forms/FormsUserContext";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import type { FormListLayoutPersisted } from "@/lib/formListLayoutStore";
@@ -144,10 +145,13 @@ export default function FormListTable({
 
   const defaults = useMemo(() => buildDefaults(columns), [columns]);
 
-  const [layout, setLayout] = useState<LayoutState>(() => ({
-    widths: { ...defaults.widths },
-    hidden: { ...defaults.hidden },
-  }));
+  const [layout, setLayout] = useState<LayoutState>(() =>
+    applyPersistedToLayout(
+      loadLegacyLocalStorage(storageKey),
+      columns.map((c) => c.id),
+      buildDefaults(columns)
+    )
+  );
 
   const layoutRef = useRef(layout);
   useEffect(() => {
@@ -207,23 +211,21 @@ export default function FormListTable({
     let cancelled = false;
 
     async function loadLayout() {
-      let p: FormListLayoutPersisted = loadLegacyLocalStorage(storageKey);
       if (userId && isFirebaseConfigured()) {
         const { loadFormListLayout } = await import(
           "@/lib/formListLayoutStore"
         );
         const remote = await loadFormListLayout(userId, storageKey);
         if (remote.widths || remote.hidden) {
-          p = remote;
+          if (cancelled) return;
+          setLayout(applyPersistedToLayout(remote, colIds, defaults));
+          return;
         }
         if (
-          !p.widths &&
-          !p.hidden &&
           typeof window !== "undefined"
         ) {
           const legacy = loadLegacyLocalStorage(storageKey);
           if (legacy.widths || legacy.hidden) {
-            p = legacy;
             const { saveFormListLayout } = await import(
               "@/lib/formListLayoutStore"
             );
@@ -235,12 +237,7 @@ export default function FormListTable({
             }
           }
         }
-      } else {
-        p = loadLegacyLocalStorage(storageKey);
       }
-      if (cancelled) return;
-      const next = applyPersistedToLayout(p, colIds, defaults);
-      requestAnimationFrame(() => setLayout(next));
     }
 
     void loadLayout();
@@ -311,6 +308,20 @@ export default function FormListTable({
     () => visibleCols.reduce((s, id) => s + (widths[id] ?? 80), 0),
     [visibleCols, widths]
   );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredRows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 52,
+    overscan: 10,
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const padTop = virtualRows.length > 0 ? virtualRows[0]!.start : 0;
+  const padBottom =
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1]!.end
+      : 0;
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -510,7 +521,10 @@ export default function FormListTable({
         </p>
       ) : null}
 
-      <div className="relative overflow-x-auto overscroll-x-contain">
+      <div
+        ref={scrollRef}
+        className="relative max-h-[min(70vh,720px)] overflow-auto overscroll-contain"
+      >
         <table
           className="border-separate border-spacing-0 text-sm"
           style={{
@@ -524,7 +538,7 @@ export default function FormListTable({
               <col key={id} style={{ width: widths[id] ?? 80 }} />
             ))}
           </colgroup>
-          <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
+          <thead className="sticky top-0 z-40 border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
             <tr>
               {visibleCols.map((id) => {
                 const col = colById.get(id);
@@ -605,7 +619,16 @@ export default function FormListTable({
                 </td>
               </tr>
             ) : null}
-            {filteredRows.map((row) => {
+            {padTop > 0 ? (
+              <tr aria-hidden>
+                <td
+                  colSpan={Math.max(visibleCols.length, 1)}
+                  style={{ height: padTop, padding: 0, border: 0 }}
+                />
+              </tr>
+            ) : null}
+            {virtualRows.map((virtualRow) => {
+              const row = filteredRows[virtualRow.index]!;
               const hp = row.highlightPending === true;
               const bodyClass = hp ? "text-blue-600" : "text-zinc-800";
               const mutedClass = hp ? "text-blue-500" : "text-zinc-500";
@@ -615,7 +638,12 @@ export default function FormListTable({
                 : "text-sky-900 hover:underline";
 
               return (
-              <tr key={row.id} className="group hover:bg-zinc-50">
+              <tr
+                key={row.id}
+                ref={rowVirtualizer.measureElement}
+                data-index={virtualRow.index}
+                className="group hover:bg-zinc-50"
+              >
                 {visibleCols.map((id) => {
                   const col = colById.get(id);
                   const variant = col?.variant ?? "text";
@@ -723,6 +751,14 @@ export default function FormListTable({
               </tr>
               );
             })}
+            {padBottom > 0 ? (
+              <tr aria-hidden>
+                <td
+                  colSpan={Math.max(visibleCols.length, 1)}
+                  style={{ height: padBottom, padding: 0, border: 0 }}
+                />
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>

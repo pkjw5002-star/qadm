@@ -20,6 +20,19 @@ import {
   type RawComplaintPhotoAttachments,
 } from "@/lib/complaintFormAssemble";
 import { urlsToPhotoRef } from "@/lib/photoRef";
+import { buildListSnapshot } from "@/lib/formListSnapshot";
+import type { FormType } from "@/generated/prisma/client";
+
+function listSnapshotField(
+  type: FormType,
+  data: unknown,
+  title: string,
+  authorName: string,
+  createdAt: Date
+): Prisma.InputJsonValue | undefined {
+  const snap = buildListSnapshot({ type, data, title, authorName, createdAt });
+  return snap ? (snap as Prisma.InputJsonValue) : undefined;
+}
 
 /** 빈 문자열·공백만 → undefined (탭 2~5 미작성 허용) */
 const optionalTrimmedNonEmpty = z.preprocess((v) => {
@@ -714,6 +727,13 @@ export async function createFormAction(_: unknown, formData: FormData) {
             status: "SUBMITTED",
             createdById: user.id,
             data,
+            listSnapshot: listSnapshotField(
+              "COMPLAINT",
+              data,
+              formNo,
+              user.name,
+              new Date()
+            ),
             events: {
               create: {
                 actorId: user.id,
@@ -781,6 +801,13 @@ export async function createFormAction(_: unknown, formData: FormData) {
         status: "SUBMITTED",
         createdById: user.id,
         data,
+        listSnapshot: listSnapshotField(
+          "QUALITY_IMPROVEMENT",
+          data,
+          title,
+          user.name,
+          new Date()
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -848,6 +875,13 @@ export async function createFormAction(_: unknown, formData: FormData) {
         status: "SUBMITTED",
         createdById: user.id,
         data,
+        listSnapshot: listSnapshotField(
+          "ABNORMAL_REPORT",
+          data,
+          title,
+          user.name,
+          new Date()
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -915,6 +949,13 @@ export async function createFormAction(_: unknown, formData: FormData) {
         status: "SUBMITTED",
         createdById: user.id,
         data,
+        listSnapshot: listSnapshotField(
+          "WORK_COOP",
+          data,
+          title,
+          user.name,
+          new Date()
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -989,6 +1030,13 @@ export async function createFormAction(_: unknown, formData: FormData) {
         status: "SUBMITTED",
         createdById: user.id,
         data,
+        listSnapshot: listSnapshotField(
+          "SUGGESTION",
+          data,
+          title,
+          user.name,
+          new Date()
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -1107,6 +1155,13 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
       where: { id: formId },
       data: {
         data,
+        listSnapshot: listSnapshotField(
+          "COMPLAINT",
+          data,
+          formNo,
+          user.name,
+          existing.createdAt
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -1253,6 +1308,13 @@ export async function updateQualityImprovementFormAction(
       data: {
         title,
         data,
+        listSnapshot: listSnapshotField(
+          "QUALITY_IMPROVEMENT",
+          data,
+          title,
+          user.name,
+          existing.createdAt
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -1373,6 +1435,13 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
       data: {
         title,
         data,
+        listSnapshot: listSnapshotField(
+          "ABNORMAL_REPORT",
+          data,
+          title,
+          user.name,
+          existing.createdAt
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -1496,6 +1565,13 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
       data: {
         title,
         data,
+        listSnapshot: listSnapshotField(
+          "WORK_COOP",
+          data,
+          title,
+          user.name,
+          existing.createdAt
+        ),
         events: {
           create: {
             actorId: user.id,
@@ -1621,6 +1697,13 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
       data: {
         title,
         data,
+        listSnapshot: listSnapshotField(
+          "SUGGESTION",
+          data,
+          title,
+          user.name,
+          existing.createdAt
+        ),
         events: {
           create: {
             actorId: user.id,

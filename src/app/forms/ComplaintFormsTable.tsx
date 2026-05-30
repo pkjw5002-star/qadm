@@ -8,97 +8,27 @@ import {
   COMPLAINT_FORM_LIST_STORAGE_KEY,
 } from "@/app/forms/formListTablePresets";
 
-export type ComplaintListRowVm = {
-  id: string;
-  no: string;
-  receiptDate: string;
-  customerInfo: string;
-  productName: string;
-  departmentAndOwner: string;
-  content: string;
-  actionContent: string;
-  outsideAsDateAndExecutor: string;
-  outsideAsContent: string;
-  outsideAsTime: string;
-  recoveryDate: string;
-  causeAnalysisDate: string;
-  /** 회수일자 없음 → 미회수 */
-  missingRecoveryDate: boolean;
-  /** 회수일 있음·원인분석일자 공란 → 회수 후 미완료 */
-  recoveredWithoutCauseAnalysisDate: boolean;
-  /** 원인분석일자 미입력 → 목록에서 파란색 강조 */
-  highlightPending: boolean;
-  defectPhenomenon: string;
-  defectCauseAnalysis: string;
-  recurrencePrevention: string;
-  recoveryHandlingContent: string;
-  commentLine: string | null;
-  commentTooltip: string | null;
-};
-
-function toFormListRow(row: ComplaintListRowVm): FormListRow {
-  const editProdDefectHref = `/forms/${row.id}/edit#complaint-prod-defect`;
-  const editProdCauseHref = `/forms/${row.id}/edit#complaint-prod-cause`;
-  return {
-    id: row.id,
-    cells: {
-      no: row.no.trim() !== "" ? row.no : "—",
-      receiptDate: row.receiptDate,
-      customerInfo: row.customerInfo,
-      productName:
-        row.productName.trim() !== "" ? row.productName : "—",
-      departmentOwner:
-        row.departmentAndOwner.trim() !== ""
-          ? row.departmentAndOwner
-          : "—",
-      content: row.content,
-      actionContent: row.actionContent,
-      outsideAsMeta: row.outsideAsDateAndExecutor,
-      outsideAsContent: row.outsideAsContent,
-      outsideAsTime: row.outsideAsTime,
-      recoveryDate: row.recoveryDate,
-      causeAnalysisDate: row.causeAnalysisDate,
-      defectPhenomenon: row.defectPhenomenon,
-      defectCauseAnalysis: row.defectCauseAnalysis,
-      recurrencePrevention: row.recurrencePrevention,
-      recoveryHandling: row.recoveryHandlingContent,
-    },
-    cellHref: {
-      defectPhenomenon: editProdDefectHref,
-      defectCauseAnalysis: editProdCauseHref,
-    },
-    commentLine: row.commentLine,
-    commentTooltip: row.commentTooltip,
-    highlightPending: row.highlightPending,
-  };
-}
-
 export default function ComplaintFormsTable({
   rows,
 }: {
-  rows: ComplaintListRowVm[];
+  rows: FormListRow[];
 }) {
   const [onlyNotRecovered, setOnlyNotRecovered] = useState(false);
   const [onlyRecoveredIncomplete, setOnlyRecoveredIncomplete] =
     useState(false);
 
-  const filteredVm = useMemo(() => {
+  const listRows = useMemo(() => {
     if (!onlyNotRecovered && !onlyRecoveredIncomplete) return rows;
     if (onlyNotRecovered && onlyRecoveredIncomplete) {
       return rows.filter(
-        (r) => r.missingRecoveryDate || r.recoveredWithoutCauseAnalysisDate
+        (r) => r.filterNotRecovered || r.filterRecoveredIncomplete
       );
     }
     if (onlyNotRecovered) {
-      return rows.filter((r) => r.missingRecoveryDate);
+      return rows.filter((r) => r.filterNotRecovered);
     }
-    return rows.filter((r) => r.recoveredWithoutCauseAnalysisDate);
+    return rows.filter((r) => r.filterRecoveredIncomplete);
   }, [rows, onlyNotRecovered, onlyRecoveredIncomplete]);
-
-  const listRows = useMemo(
-    () => filteredVm.map(toFormListRow),
-    [filteredVm]
-  );
 
   const leadingToolbar = (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-zinc-800">

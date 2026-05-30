@@ -51,6 +51,7 @@ export default async function FormsLayout({
             <div className="-mx-1 flex gap-1 overflow-x-auto py-2">
               <Link
                 href="/forms"
+                prefetch
                 className="shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
               >
                 전체
@@ -59,6 +60,7 @@ export default async function FormsLayout({
                 <Link
                   key={t.key}
                   href={`/forms?type=${t.key}`}
+                  prefetch
                   className="shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
                 >
                   {t.label}

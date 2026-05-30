@@ -22,4 +22,8 @@ export type FormListRow = {
   cellHref?: Partial<Record<string, string>>;
   /** 미처리 등 강조: 행 본문을 파란색으로 표시 */
   highlightPending?: boolean;
+  /** 불만 목록: 미회수 필터 */
+  filterNotRecovered?: boolean;
+  /** 불만 목록: 회수 후 미완료 필터 */
+  filterRecoveredIncomplete?: boolean;
 };

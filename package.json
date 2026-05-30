@@ -12,6 +12,7 @@
     "build": "prisma generate && next build",
     "vercel-build": "node scripts/vercel-build.mjs",
     "vercel:sync-env": "node scripts/sync-vercel-env.mjs",
+    "backfill:list-snapshot": "npx tsx scripts/backfill-list-snapshot.ts",
     "start": "next start",
     "lint": "eslint"
   },
@@ -20,6 +21,7 @@
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@tanstack/react-virtual": "^3.13.26",
     "bcryptjs": "^3.0.3",
     "firebase": "^12.13.0",
     "firebase-admin": "^13.10.0",
