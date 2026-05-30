@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { formListHref } from "@/lib/formTypes";
 import { Prisma } from "@/generated/prisma/client";
 
 type CommentAttachmentInput = {
@@ -92,6 +93,6 @@ export async function deleteFormAction(formData: FormData) {
 
   revalidatePath("/forms");
   revalidatePath(`/forms/${formId}`);
-  redirect("/forms");
+  redirect(formListHref(existing.type));
 }
 

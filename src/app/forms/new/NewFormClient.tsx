@@ -55,6 +55,7 @@ import type { SuggestionDefaults } from "@/lib/suggestionDefaults";
 import {
   FORM_TYPES,
   FORM_TYPE_LABEL,
+  formListHref,
   isFormTypeKey,
   type FormTypeKey,
 } from "@/lib/formTypes";
@@ -149,9 +150,9 @@ export default function NewFormClient({
   }, []);
 
   const listHref = useMemo(() => {
-    const t = isFormTypeKey(selectedType) ? selectedType : undefined;
-    return t ? `/forms?type=${t}` : "/forms";
-  }, [selectedType]);
+    if (editFormId) return formListHref(type);
+    return formListHref(selectedType);
+  }, [editFormId, type, selectedType]);
 
   const [createState, createAction, createPending] = useActionState<
     FormActionState,

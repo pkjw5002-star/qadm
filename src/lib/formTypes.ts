@@ -31,3 +31,8 @@ export function isFormTypeKey(v: unknown): v is FormTypeKey {
   );
 }
 
+/** 서식 종류별 목록 URL (없으면 전체 목록) */
+export function formListHref(type: unknown): string {
+  return isFormTypeKey(type) ? `/forms?type=${type}` : "/forms";
+}
+

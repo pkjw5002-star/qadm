@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { formListHref } from "@/lib/formTypes";
 import CommentsPanel from "@/app/forms/[id]/CommentsPanel";
 import DeleteFormForm from "@/app/forms/[id]/DeleteFormForm";
 
@@ -380,7 +381,7 @@ export async function FormDetailBody({ id }: { id: string }) {
           ) : null}
           <Link
             className="text-sm font-medium text-zinc-900 underline"
-            href="/forms"
+            href={formListHref(form.type)}
           >
             목록
           </Link>
