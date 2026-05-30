@@ -29,8 +29,12 @@ function TabPanel({
   active: boolean;
   children: ReactNode;
 }) {
-  if (!active) return null;
-  return <div className="space-y-4">{children}</div>;
+  /** 비활성 탭도 DOM에 유지 — 숨긴 탭 필드가 FormData에 포함되어야 다른 탭에서 저장 가능 */
+  return (
+    <div className={active ? "space-y-4" : "hidden"} aria-hidden={!active}>
+      {children}
+    </div>
+  );
 }
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -41,6 +45,7 @@ import {
   updateAbnormalReportFormAction,
   updateWorkCoopFormAction,
   updateSuggestionFormAction,
+  type FormActionFailure,
 } from "@/app/forms/new/actions";
 import type { ComplaintFormDefaults } from "@/lib/complaintFormDefaults";
 import type { QualityImprovementDefaults } from "@/lib/qualityImprovementDefaults";
@@ -54,7 +59,7 @@ import {
   type FormTypeKey,
 } from "@/lib/formTypes";
 
-type FormActionState = { ok: false; message: string } | undefined;
+type FormActionState = FormActionFailure | undefined;
 
 export default function NewFormClient({
   departmentOwnerOptions,
@@ -209,6 +214,33 @@ export default function NewFormClient({
 
   const saving = pending || photoUploading;
 
+  const draftValues =
+    state?.ok === false && state.values ? state.values : undefined;
+
+  const [formRevision, setFormRevision] = useState(0);
+  useEffect(() => {
+    if (state?.ok === false && state.values) {
+      setFormRevision((r) => r + 1);
+    }
+  }, [state]);
+
+  const complaintVals = useMemo(
+    () => ({ ...complaintBase, ...draftValues }),
+    [complaintBase, draftValues]
+  );
+  const qiVals = useMemo(
+    () => ({ ...qiBase, ...draftValues }),
+    [qiBase, draftValues]
+  );
+  const abVals = useMemo(
+    () => ({ ...abBase, ...draftValues }),
+    [abBase, draftValues]
+  );
+  const sgVals = useMemo(
+    () => ({ ...sgBase, ...draftValues }),
+    [sgBase, draftValues]
+  );
+
   async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
     if (submitAfterPhotoUpload.current) {
       submitAfterPhotoUpload.current = false;
@@ -274,6 +306,7 @@ export default function NewFormClient({
 
       {/* 탭으로 숨긴 패널에도 required가 있으면 브라우저 기본 검증이 막을 수 있어 noValidate 후 서버(Zod) 검증 */}
       <form
+        key={`${editFormId ?? "new"}-${type}-${formRevision}`}
         action={action}
         onSubmit={handleFormSubmit}
         noValidate={
@@ -444,7 +477,7 @@ export default function NewFormClient({
                         required
                         type="date"
                         defaultValue={
-                          complaintBase.receiptDate || todayDateInputValue
+                          complaintVals.receiptDate || todayDateInputValue
                         }
                         className="mt-1 w-full min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
                       />
@@ -462,7 +495,7 @@ export default function NewFormClient({
                         name="complaintProductName"
                         type="text"
                         required
-                        defaultValue={complaintBase.complaintProductName ?? ""}
+                        defaultValue={complaintVals.complaintProductName ?? ""}
                         className="mt-1 w-full min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
                         placeholder="모델명·품번"
                         autoComplete="off"
@@ -499,7 +532,7 @@ export default function NewFormClient({
                           required
                           className="mt-1 w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
                           defaultValue={
-                            complaintBase.departmentOwnerOptionId ||
+                            complaintVals.departmentOwnerOptionId ||
                             departmentOwnerOptions[0]?.id ||
                             ""
                           }
@@ -545,7 +578,7 @@ export default function NewFormClient({
                   <input
                     name="customerInfo"
                     required
-                    defaultValue={complaintBase.customerInfo ?? ""}
+                    defaultValue={complaintVals.customerInfo ?? ""}
                     className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="예: ABC상사 / 김철수 / 010-1234-5678"
                   />
@@ -563,7 +596,7 @@ export default function NewFormClient({
                   name="productAndComplaint"
                   required
                   rows={5}
-                  defaultValue={complaintBase.productAndComplaint ?? ""}
+                  defaultValue={complaintVals.productAndComplaint ?? ""}
                   className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                   placeholder="세부품명, 불만 내용, 발생 상황 등을 입력"
                 />
@@ -581,7 +614,7 @@ export default function NewFormClient({
                   name="productManufacturing"
                   type="text"
                   required
-                  defaultValue={complaintBase.productManufacturing ?? ""}
+                  defaultValue={complaintVals.productManufacturing ?? ""}
                   className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                   placeholder="예: SN-001 · 2026-05-09 · 홍길동"
                   autoComplete="off"
@@ -593,7 +626,7 @@ export default function NewFormClient({
                 fileField="photoFile"
                 urlField="photoUrlDirect"
                 removeField="photoRemove"
-                defaultPhoto={complaintBase.receiptPhoto}
+                defaultPhoto={complaintVals.receiptPhoto}
               />
 
               <label className="block">
@@ -603,7 +636,7 @@ export default function NewFormClient({
                 <textarea
                   name="actionContent"
                   rows={2}
-                  defaultValue={complaintBase.actionContent ?? ""}
+                  defaultValue={complaintVals.actionContent ?? ""}
                   className="mt-1 max-h-28 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                 />
               </label>
@@ -618,7 +651,7 @@ export default function NewFormClient({
                     <input
                       name="outsideAsDate"
                       type="date"
-                      defaultValue={complaintBase.outsideAsDate ?? ""}
+                      defaultValue={complaintVals.outsideAsDate ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -629,7 +662,7 @@ export default function NewFormClient({
                     <input
                       name="outsideAsExecutor"
                       type="text"
-                      defaultValue={complaintBase.outsideAsExecutor ?? ""}
+                      defaultValue={complaintVals.outsideAsExecutor ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 홍길동"
                       autoComplete="off"
@@ -642,7 +675,7 @@ export default function NewFormClient({
                     <input
                       name="outsideAsPlace"
                       type="text"
-                      defaultValue={complaintBase.outsideAsPlace ?? ""}
+                      defaultValue={complaintVals.outsideAsPlace ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: OO공장 2라인"
                       autoComplete="off"
@@ -655,7 +688,7 @@ export default function NewFormClient({
                     <input
                       name="outsideAsDuration"
                       type="text"
-                      defaultValue={complaintBase.outsideAsDuration ?? ""}
+                      defaultValue={complaintVals.outsideAsDuration ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 2시간 30분"
                       autoComplete="off"
@@ -670,7 +703,7 @@ export default function NewFormClient({
                   <textarea
                     name="outsideAsContentResult"
                     rows={6}
-                    defaultValue={complaintBase.outsideAsContentResult ?? ""}
+                    defaultValue={complaintVals.outsideAsContentResult ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="실시 내용, 조치 결과 등을 입력"
                   />
@@ -681,7 +714,7 @@ export default function NewFormClient({
                   fileField="outsideAsPhotoFile"
                   urlField="outsideAsPhotoUrlDirect"
                   removeField="outsideAsPhotoRemove"
-                  defaultPhoto={complaintBase.outsideAsPhoto}
+                  defaultPhoto={complaintVals.outsideAsPhoto}
                 />
               </TabPanel>
 
@@ -694,7 +727,7 @@ export default function NewFormClient({
                     <input
                       name="prodDefectRecoveryDate"
                       type="date"
-                      defaultValue={complaintBase.prodDefectRecoveryDate ?? ""}
+                      defaultValue={complaintVals.prodDefectRecoveryDate ?? ""}
                       className="mt-1 w-full min-w-0 rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -705,7 +738,7 @@ export default function NewFormClient({
                     <input
                       name="prodCauseAnalysisDate"
                       type="date"
-                      defaultValue={complaintBase.prodCauseAnalysisDate ?? ""}
+                      defaultValue={complaintVals.prodCauseAnalysisDate ?? ""}
                       className="mt-1 w-full min-w-0 rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -716,7 +749,7 @@ export default function NewFormClient({
                     <input
                       name="prodRecoveredManufacturingInfo"
                       type="text"
-                      defaultValue={complaintBase.prodRecoveredManufacturingInfo ?? ""}
+                      defaultValue={complaintVals.prodRecoveredManufacturingInfo ?? ""}
                       className="mt-1 w-full min-w-0 rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 2026-03 · 김OO · INS-10234"
                       autoComplete="off"
@@ -732,7 +765,7 @@ export default function NewFormClient({
                     id="complaint-prod-defect"
                     name="prodRecoveredOperationAppearance"
                     rows={5}
-                    defaultValue={complaintBase.prodRecoveredOperationAppearance ?? ""}
+                    defaultValue={complaintVals.prodRecoveredOperationAppearance ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="회수품 동작 및 외관·기타 불량현상을 함께 기술"
                   />
@@ -746,7 +779,7 @@ export default function NewFormClient({
                     id="complaint-prod-cause"
                     name="prodDefectCauseAnalysis"
                     rows={4}
-                    defaultValue={complaintBase.prodDefectCauseAnalysis ?? ""}
+                    defaultValue={complaintVals.prodDefectCauseAnalysis ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                   />
                 </label>
@@ -756,7 +789,7 @@ export default function NewFormClient({
                   fileField="prodCauseRefPhotoFile"
                   urlField="prodCauseRefPhotoUrlDirect"
                   removeField="prodCauseRefPhotoRemove"
-                  defaultPhoto={complaintBase.prodCauseRefPhoto}
+                  defaultPhoto={complaintVals.prodCauseRefPhoto}
                 />
 
                 <label className="block">
@@ -766,7 +799,7 @@ export default function NewFormClient({
                   <textarea
                     name="prodRecurrencePrevention"
                     rows={4}
-                    defaultValue={complaintBase.prodRecurrencePrevention ?? ""}
+                    defaultValue={complaintVals.prodRecurrencePrevention ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                   />
                 </label>
@@ -776,7 +809,7 @@ export default function NewFormClient({
                   fileField="prodRecurrenceRefPhotoFile"
                   urlField="prodRecurrenceRefPhotoUrlDirect"
                   removeField="prodRecurrenceRefPhotoRemove"
-                  defaultPhoto={complaintBase.prodRecurrenceRefPhoto}
+                  defaultPhoto={complaintVals.prodRecurrenceRefPhoto}
                 />
               </TabPanel>
 
@@ -789,7 +822,7 @@ export default function NewFormClient({
                     <input
                       name="labChargePerson"
                       type="text"
-                      defaultValue={complaintBase.labChargePerson ?? ""}
+                      defaultValue={complaintVals.labChargePerson ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="연구소 담당자 성명"
                       autoComplete="off"
@@ -802,7 +835,7 @@ export default function NewFormClient({
                     <input
                       name="labCauseAnalysisDate"
                       type="date"
-                      defaultValue={complaintBase.labCauseAnalysisDate ?? ""}
+                      defaultValue={complaintVals.labCauseAnalysisDate ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -815,7 +848,7 @@ export default function NewFormClient({
                   <textarea
                     name="labCauseAnalysis"
                     rows={5}
-                    defaultValue={complaintBase.labCauseAnalysis ?? ""}
+                    defaultValue={complaintVals.labCauseAnalysis ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                   />
                 </label>
@@ -825,7 +858,7 @@ export default function NewFormClient({
                   fileField="labCauseRefPhotoFile"
                   urlField="labCauseRefPhotoUrlDirect"
                   removeField="labCauseRefPhotoRemove"
-                  defaultPhoto={complaintBase.labCauseRefPhoto}
+                  defaultPhoto={complaintVals.labCauseRefPhoto}
                 />
 
                 <label className="block">
@@ -835,7 +868,7 @@ export default function NewFormClient({
                   <textarea
                     name="labRecurrencePrevention"
                     rows={4}
-                    defaultValue={complaintBase.labRecurrencePrevention ?? ""}
+                    defaultValue={complaintVals.labRecurrencePrevention ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                   />
                 </label>
@@ -845,7 +878,7 @@ export default function NewFormClient({
                   fileField="labRecurrenceRefPhotoFile"
                   urlField="labRecurrenceRefPhotoUrlDirect"
                   removeField="labRecurrenceRefPhotoRemove"
-                  defaultPhoto={complaintBase.labRecurrenceRefPhoto}
+                  defaultPhoto={complaintVals.labRecurrenceRefPhoto}
                 />
               </TabPanel>
 
@@ -857,7 +890,7 @@ export default function NewFormClient({
                   <input
                     name="recoveryProcessingDate"
                     type="date"
-                    defaultValue={complaintBase.recoveryProcessingDate ?? ""}
+                    defaultValue={complaintVals.recoveryProcessingDate ?? ""}
                     className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                   />
                 </label>
@@ -870,7 +903,7 @@ export default function NewFormClient({
                     name="recoveryProcessingContent"
                     className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     defaultValue={
-                      complaintBase.recoveryProcessingContent || "현상태사용"
+                      complaintVals.recoveryProcessingContent || "현상태사용"
                     }
                   >
                     <option value="현상태사용">현상태사용</option>
@@ -888,7 +921,7 @@ export default function NewFormClient({
                   <textarea
                     name="recoveryProcessingDetail"
                     rows={5}
-                    defaultValue={complaintBase.recoveryProcessingDetail ?? ""}
+                    defaultValue={complaintVals.recoveryProcessingDetail ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="처리 절차·비고 등 상세 기술"
                   />
@@ -937,7 +970,7 @@ export default function NewFormClient({
                       required
                       type="date"
                       defaultValue={
-                        qiBase.qiReceiptDate || todayDateInputValue
+                        qiVals.qiReceiptDate || todayDateInputValue
                       }
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
@@ -954,7 +987,7 @@ export default function NewFormClient({
                       name="qiWriterName"
                       required
                       type="text"
-                      defaultValue={qiBase.qiWriterName || currentUserName}
+                      defaultValue={qiVals.qiWriterName || currentUserName}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-zinc-800 outline-none focus:border-zinc-400"
                       placeholder="작성자"
                       autoComplete="name"
@@ -972,7 +1005,7 @@ export default function NewFormClient({
                       name="qiItemSpec"
                       required
                       type="text"
-                      defaultValue={qiBase.qiItemSpec ?? ""}
+                      defaultValue={qiVals.qiItemSpec ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 품명 / 규격 / 사양"
                       autoComplete="off"
@@ -990,7 +1023,7 @@ export default function NewFormClient({
                       name="qiReviewDepartmentOwner"
                       required
                       type="text"
-                      defaultValue={qiBase.qiReviewDepartmentOwner ?? ""}
+                      defaultValue={qiVals.qiReviewDepartmentOwner ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 품질팀 / 홍길동"
                       autoComplete="off"
@@ -1010,7 +1043,7 @@ export default function NewFormClient({
                     name="qiRequestReasonDetails"
                     required
                     rows={6}
-                    defaultValue={qiBase.qiRequestReasonDetails ?? ""}
+                    defaultValue={qiVals.qiRequestReasonDetails ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="의뢰 사유, 개선 요청사항, 세부 조건 등을 입력"
                   />
@@ -1021,7 +1054,7 @@ export default function NewFormClient({
                   fileField="qiReceiptPhotoFile"
                   urlField="qiReceiptPhotoUrlDirect"
                   removeField="qiReceiptPhotoRemove"
-                  defaultPhoto={qiBase.qiReceiptPhoto}
+                  defaultPhoto={qiVals.qiReceiptPhoto}
                 />
               </TabPanel>
 
@@ -1034,7 +1067,7 @@ export default function NewFormClient({
                     <input
                       name="qiReviewDate"
                       type="date"
-                      defaultValue={qiBase.qiReviewDate || todayDateInputValue}
+                      defaultValue={qiVals.qiReviewDate || todayDateInputValue}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -1045,7 +1078,7 @@ export default function NewFormClient({
                     <input
                       name="qiReviewDecisionDateReason"
                       type="text"
-                      defaultValue={qiBase.qiReviewDecisionDateReason ?? ""}
+                      defaultValue={qiVals.qiReviewDecisionDateReason ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 2026-05-20 / 설비 점검 후 진행"
                       autoComplete="off"
@@ -1060,7 +1093,7 @@ export default function NewFormClient({
                   <textarea
                     name="qiReviewImprovementContent"
                     rows={6}
-                    defaultValue={qiBase.qiReviewImprovementContent ?? ""}
+                    defaultValue={qiVals.qiReviewImprovementContent ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="검토 결과, 개선 내용, 처리 내역 등을 입력"
                   />
@@ -1071,7 +1104,7 @@ export default function NewFormClient({
                   fileField="qiReviewPhotoFile"
                   urlField="qiReviewPhotoUrlDirect"
                   removeField="qiReviewPhotoRemove"
-                  defaultPhoto={qiBase.qiReviewPhoto}
+                  defaultPhoto={qiVals.qiReviewPhoto}
                 />
               </TabPanel>
 
@@ -1084,7 +1117,7 @@ export default function NewFormClient({
                     <input
                       name="qiConfirmDate"
                       type="date"
-                      defaultValue={qiBase.qiConfirmDate || todayDateInputValue}
+                      defaultValue={qiVals.qiConfirmDate || todayDateInputValue}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -1095,7 +1128,7 @@ export default function NewFormClient({
                     <input
                       name="qiConfirmContent"
                       type="text"
-                      defaultValue={qiBase.qiConfirmContent ?? ""}
+                      defaultValue={qiVals.qiConfirmContent ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 개선 내용 확인 완료"
                       autoComplete="off"
@@ -1145,7 +1178,7 @@ export default function NewFormClient({
                       required
                       type="date"
                       defaultValue={
-                        sgBase.sgProposalDate || todayDateInputValue
+                        sgVals.sgProposalDate || todayDateInputValue
                       }
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
@@ -1162,7 +1195,7 @@ export default function NewFormClient({
                       name="sgWriterName"
                       required
                       type="text"
-                      defaultValue={sgBase.sgWriterName || currentUserName}
+                      defaultValue={sgVals.sgWriterName || currentUserName}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-zinc-800 outline-none focus:border-zinc-400"
                       placeholder="작성자"
                       autoComplete="name"
@@ -1182,7 +1215,7 @@ export default function NewFormClient({
                     name="sgProposalContent"
                     required
                     rows={6}
-                    defaultValue={sgBase.sgProposalContent ?? ""}
+                    defaultValue={sgVals.sgProposalContent ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="제안 내용을 입력"
                   />
@@ -1193,7 +1226,7 @@ export default function NewFormClient({
                   fileField="sgProposalPhotoFile"
                   urlField="sgProposalPhotoUrlDirect"
                   removeField="sgProposalPhotoRemove"
-                  defaultPhoto={sgBase.sgProposalPhoto}
+                  defaultPhoto={sgVals.sgProposalPhoto}
                 />
 
                 <label className="block">
@@ -1208,7 +1241,7 @@ export default function NewFormClient({
                     name="sgProposalEffect"
                     required
                     rows={4}
-                    defaultValue={sgBase.sgProposalEffect ?? ""}
+                    defaultValue={sgVals.sgProposalEffect ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="기대 효과·개선 효과 등을 입력"
                   />
@@ -1225,7 +1258,7 @@ export default function NewFormClient({
                       name="sgReviewDate"
                       type="date"
                       defaultValue={
-                        sgBase.sgReviewDate || todayDateInputValue
+                        sgVals.sgReviewDate || todayDateInputValue
                       }
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
@@ -1237,7 +1270,7 @@ export default function NewFormClient({
                     <input
                       name="sgReviewerComment"
                       type="text"
-                      defaultValue={sgBase.sgReviewerComment ?? ""}
+                      defaultValue={sgVals.sgReviewerComment ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 시행 / 홍길동 / 5만원"
                       autoComplete="off"
@@ -1253,7 +1286,7 @@ export default function NewFormClient({
                     <input
                       name="sgProcessingHandler"
                       type="text"
-                      defaultValue={sgBase.sgProcessingHandler ?? ""}
+                      defaultValue={sgVals.sgProcessingHandler ?? ""}
                       className="mt-1 w-full max-w-[12rem] rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="이름"
                       autoComplete="off"
@@ -1266,7 +1299,7 @@ export default function NewFormClient({
                     <input
                       name="sgProcessingPlannedDate"
                       type="date"
-                      defaultValue={sgBase.sgProcessingPlannedDate ?? ""}
+                      defaultValue={sgVals.sgProcessingPlannedDate ?? ""}
                       className="mt-1 w-full max-w-xs rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -1279,7 +1312,7 @@ export default function NewFormClient({
                   <textarea
                     name="sgProcessingContent"
                     rows={6}
-                    defaultValue={sgBase.sgProcessingContent ?? ""}
+                    defaultValue={sgVals.sgProcessingContent ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder="심사·처리 결과 및 내용을 입력"
                   />
@@ -1290,7 +1323,7 @@ export default function NewFormClient({
                   fileField="sgProcessingPhotoFile"
                   urlField="sgProcessingPhotoUrlDirect"
                   removeField="sgProcessingPhotoRemove"
-                  defaultPhoto={sgBase.sgProcessingPhoto}
+                  defaultPhoto={sgVals.sgProcessingPhoto}
                 />
               </TabPanel>
             </section>
@@ -1346,7 +1379,7 @@ export default function NewFormClient({
                       required
                       type="date"
                       defaultValue={
-                        abBase.abReportDate || todayDateInputValue
+                        abVals.abReportDate || todayDateInputValue
                       }
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
@@ -1363,7 +1396,7 @@ export default function NewFormClient({
                       name="abWriterName"
                       required
                       type="text"
-                      defaultValue={abBase.abWriterName || currentUserName}
+                      defaultValue={abVals.abWriterName || currentUserName}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-zinc-800 outline-none focus:border-zinc-400"
                       placeholder="작성자"
                       autoComplete="name"
@@ -1381,7 +1414,7 @@ export default function NewFormClient({
                       name="abItemSpec"
                       required
                       type="text"
-                      defaultValue={abBase.abItemSpec ?? ""}
+                      defaultValue={abVals.abItemSpec ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 품명 / 규격 / 사양"
                       autoComplete="off"
@@ -1399,7 +1432,7 @@ export default function NewFormClient({
                       name="abHandlingDepartmentOwner"
                       required
                       type="text"
-                      defaultValue={abBase.abHandlingDepartmentOwner ?? ""}
+                      defaultValue={abVals.abHandlingDepartmentOwner ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 생산팀 / 홍길동"
                       autoComplete="off"
@@ -1421,7 +1454,7 @@ export default function NewFormClient({
                     name="abProblemAndRequest"
                     required
                     rows={6}
-                    defaultValue={abBase.abProblemAndRequest ?? ""}
+                    defaultValue={abVals.abProblemAndRequest ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder={
                       isWorkCoop
@@ -1440,7 +1473,7 @@ export default function NewFormClient({
                   fileField="abReportPhotoFile"
                   urlField="abReportPhotoUrlDirect"
                   removeField="abReportPhotoRemove"
-                  defaultPhoto={abBase.abReportPhoto}
+                  defaultPhoto={abVals.abReportPhoto}
                 />
               </TabPanel>
 
@@ -1453,7 +1486,7 @@ export default function NewFormClient({
                     <input
                       name="abHandlingDate"
                       type="date"
-                      defaultValue={abBase.abHandlingDate || todayDateInputValue}
+                      defaultValue={abVals.abHandlingDate || todayDateInputValue}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -1464,7 +1497,7 @@ export default function NewFormClient({
                     <input
                       name="abPlannedDateReason"
                       type="text"
-                      defaultValue={abBase.abPlannedDateReason ?? ""}
+                      defaultValue={abVals.abPlannedDateReason ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 2026-05-20 / 부품 수급 후 진행"
                       autoComplete="off"
@@ -1481,7 +1514,7 @@ export default function NewFormClient({
                   <textarea
                     name="abCauseAndActionPrevention"
                     rows={6}
-                    defaultValue={abBase.abCauseAndActionPrevention ?? ""}
+                    defaultValue={abVals.abCauseAndActionPrevention ?? ""}
                     className="mt-1 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     placeholder={
                       isWorkCoop
@@ -1500,7 +1533,7 @@ export default function NewFormClient({
                   fileField="abHandlingPhotoFile"
                   urlField="abHandlingPhotoUrlDirect"
                   removeField="abHandlingPhotoRemove"
-                  defaultPhoto={abBase.abHandlingPhoto}
+                  defaultPhoto={abVals.abHandlingPhoto}
                 />
               </TabPanel>
 
@@ -1513,7 +1546,7 @@ export default function NewFormClient({
                     <input
                       name="abConfirmDate"
                       type="date"
-                      defaultValue={abBase.abConfirmDate || todayDateInputValue}
+                      defaultValue={abVals.abConfirmDate || todayDateInputValue}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
@@ -1524,7 +1557,7 @@ export default function NewFormClient({
                     <input
                       name="abConfirmContent"
                       type="text"
-                      defaultValue={abBase.abConfirmContent ?? ""}
+                      defaultValue={abVals.abConfirmContent ?? ""}
                       className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
                       placeholder="예: 조치 내용 확인 완료"
                       autoComplete="off"

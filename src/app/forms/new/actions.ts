@@ -80,6 +80,15 @@ const FORM_FIELD_LABEL_KO: Record<string, string> = {
   sgProcessingContent: "처리내용",
 };
 
+function fieldRequiredMessage(label: string): string {
+  const trimmed = label.trim();
+  const last = trimmed.charCodeAt(trimmed.length - 1);
+  const hasBatchim =
+    last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  const particle = hasBatchim ? "은" : "는";
+  return `${trimmed}${particle} 필수입니다.`;
+}
+
 function formFieldsValidationMessage(error: z.ZodError): string {
   for (const issue of error.issues) {
     if (issue.code === "custom" && issue.message) {
@@ -92,11 +101,36 @@ function formFieldsValidationMessage(error: z.ZodError): string {
     if (typeof leaf === "string") {
       const label = FORM_FIELD_LABEL_KO[leaf];
       if (label) {
-        return `${label}은(는) 필수입니다.`;
+        return fieldRequiredMessage(label);
       }
     }
   }
   return "필수 항목을 확인해 주세요.";
+}
+
+export type FormActionFailure = {
+  ok: false;
+  message: string;
+  values?: Record<string, string>;
+};
+
+function formDataToValues(formData: FormData): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    if (typeof value === "string") out[key] = value;
+  }
+  return out;
+}
+
+function formActionFailure(
+  message: string,
+  formData?: FormData
+): FormActionFailure {
+  return {
+    ok: false,
+    message,
+    ...(formData ? { values: formDataToValues(formData) } : {}),
+  };
 }
 
 const recoveryProcessingContentOptional = z.preprocess((v) => {
@@ -686,16 +720,16 @@ export async function createFormAction(_: unknown, formData: FormData) {
   } as unknown);
 
   if (!parsed.success) {
-    return {
-      ok: false as const,
-      message: formFieldsValidationMessage(parsed.error),
-    };
+    return formActionFailure(
+      formFieldsValidationMessage(parsed.error),
+      formData
+    );
   }
 
   let rawAttachments: RawComplaintPhotoAttachments = {};
   if (parsed.data.type === "COMPLAINT") {
     const ph = await parseComplaintPhotoAttachments(formData);
-    if ("error" in ph) return { ok: false as const, message: ph.error };
+    if ("error" in ph) return formActionFailure(ph.error, formData);
     rawAttachments = ph;
   }
 
@@ -704,7 +738,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
       where: { id: parsed.data.departmentOwnerOptionId },
       select: { label: true },
     });
-    if (!opt) return { ok: false as const, message: "부서/담당자 항목을 선택해 주세요." };
+    if (!opt) return formActionFailure("부서/담당자 항목을 선택해 주세요.", formData);
 
     const d = parsed.data;
 
@@ -749,7 +783,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.";
-      return { ok: false as const, message: msg };
+      return formActionFailure(msg, formData);
     }
 
     redirect(`/forms/${createdId}`);
@@ -757,7 +791,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
 
   if (parsed.data.type === "QUALITY_IMPROVEMENT") {
     const photos = await parseQualityImprovementPhotos(formData);
-    if ("error" in photos) return { ok: false as const, message: photos.error };
+    if ("error" in photos) return formActionFailure(photos.error, formData);
 
     const d = parsed.data;
     const formNo = await getNextQualityImprovementFormNo(prisma);
@@ -824,7 +858,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
 
   if (parsed.data.type === "ABNORMAL_REPORT") {
     const photos = await parseAbnormalReportPhotos(formData);
-    if ("error" in photos) return { ok: false as const, message: photos.error };
+    if ("error" in photos) return formActionFailure(photos.error, formData);
 
     const d = parsed.data;
     const formNo = await getNextAbnormalReportFormNo(prisma);
@@ -898,7 +932,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
 
   if (parsed.data.type === "WORK_COOP") {
     const photos = await parseAbnormalReportPhotos(formData);
-    if ("error" in photos) return { ok: false as const, message: photos.error };
+    if ("error" in photos) return formActionFailure(photos.error, formData);
 
     const d = parsed.data;
     const formNo = await getNextWorkCoopFormNo(prisma);
@@ -972,16 +1006,15 @@ export async function createFormAction(_: unknown, formData: FormData) {
 
   if (parsed.data.type === "SUGGESTION") {
     const photos = await parseSuggestionPhotos(formData);
-    if ("error" in photos) return { ok: false as const, message: photos.error };
+    if ("error" in photos) return formActionFailure(photos.error, formData);
 
     const d = parsed.data;
 
     if (photos.processingPhoto && !String(d.sgReviewDate ?? "").trim()) {
-      return {
-        ok: false as const,
-        message:
-          "처리내용 사진을 첨부한 경우 심사일을 입력해 주세요.",
-      };
+      return formActionFailure(
+        "처리내용 사진을 첨부한 경우 심사일을 입력해 주세요.",
+        formData
+      );
     }
 
     const hasReviewResult = Boolean(
@@ -1051,7 +1084,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     redirect(`/forms/${created.id}`);
   }
 
-  return { ok: false as const, message: "지원하지 않는 서식 종류입니다." };
+  return formActionFailure("지원하지 않는 서식 종류입니다.", formData);
 }
 
 function complaintFieldsFromFormData(formData: FormData) {
@@ -1116,14 +1149,14 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
     complaintFieldsFromFormData(formData)
   );
   if (!parsed.success) {
-    return {
-      ok: false as const,
-      message: formFieldsValidationMessage(parsed.error),
-    };
+    return formActionFailure(
+      formFieldsValidationMessage(parsed.error),
+      formData
+    );
   }
 
   const ph = await parseComplaintPhotoAttachments(formData);
-  if ("error" in ph) return { ok: false as const, message: ph.error };
+  if ("error" in ph) return formActionFailure(ph.error, formData);
 
   const existingData = existing.data as Record<string, unknown>;
   const existingComplaint = existingData.complaint as
@@ -1135,7 +1168,7 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
     select: { label: true },
   });
   if (!opt) {
-    return { ok: false as const, message: "부서/담당자 항목을 선택해 주세요." };
+    return formActionFailure("부서/담당자 항목을 선택해 주세요.", formData);
   }
 
   const formNo = String(
@@ -1174,7 +1207,7 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
   } catch (e) {
     const msg =
       e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.";
-    return { ok: false as const, message: msg };
+    return formActionFailure(msg, formData);
   }
 
   redirect(`/forms/${formId}`);
@@ -1239,14 +1272,14 @@ export async function updateQualityImprovementFormAction(
     qiConfirmContent: String(formData.get("qiConfirmContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return {
-      ok: false as const,
-      message: formFieldsValidationMessage(parsed.error),
-    };
+    return formActionFailure(
+      formFieldsValidationMessage(parsed.error),
+      formData
+    );
   }
 
   const photos = await parseQualityImprovementPhotos(formData);
-  if ("error" in photos) return { ok: false as const, message: photos.error };
+  if ("error" in photos) return formActionFailure(photos.error, formData);
 
   const existingData = existing.data as {
     qualityImprovement?: {
@@ -1327,7 +1360,7 @@ export async function updateQualityImprovementFormAction(
   } catch (e) {
     const msg =
       e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.";
-    return { ok: false as const, message: msg };
+    return formActionFailure(msg, formData);
   }
 
   redirect(`/forms/${formId}`);
@@ -1363,14 +1396,14 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
     abConfirmContent: String(formData.get("abConfirmContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return {
-      ok: false as const,
-      message: formFieldsValidationMessage(parsed.error),
-    };
+    return formActionFailure(
+      formFieldsValidationMessage(parsed.error),
+      formData
+    );
   }
 
   const photos = await parseAbnormalReportPhotos(formData);
-  if ("error" in photos) return { ok: false as const, message: photos.error };
+  if ("error" in photos) return formActionFailure(photos.error, formData);
 
   const existingData = existing.data as {
     abnormalReport?: {
@@ -1453,7 +1486,7 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.";
-    return { ok: false as const, message: msg };
+    return formActionFailure(msg, formData);
   }
 
   redirect(`/forms/${formId}`);
@@ -1493,14 +1526,14 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
     abConfirmContent: String(formData.get("abConfirmContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return {
-      ok: false as const,
-      message: formFieldsValidationMessage(parsed.error),
-    };
+    return formActionFailure(
+      formFieldsValidationMessage(parsed.error),
+      formData
+    );
   }
 
   const photos = await parseAbnormalReportPhotos(formData);
-  if ("error" in photos) return { ok: false as const, message: photos.error };
+  if ("error" in photos) return formActionFailure(photos.error, formData);
 
   const existingData = existing.data as {
     workCoop?: {
@@ -1583,7 +1616,7 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.";
-    return { ok: false as const, message: msg };
+    return formActionFailure(msg, formData);
   }
 
   redirect(`/forms/${formId}`);
@@ -1620,20 +1653,20 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
     sgProcessingContent: String(formData.get("sgProcessingContent") ?? ""),
   } as unknown);
   if (!parsed.success) {
-    return {
-      ok: false as const,
-      message: formFieldsValidationMessage(parsed.error),
-    };
+    return formActionFailure(
+      formFieldsValidationMessage(parsed.error),
+      formData
+    );
   }
 
   const photos = await parseSuggestionPhotos(formData);
-  if ("error" in photos) return { ok: false as const, message: photos.error };
+  if ("error" in photos) return formActionFailure(photos.error, formData);
 
   if (photos.processingPhoto && !String(parsed.data.sgReviewDate ?? "").trim()) {
-    return {
-      ok: false as const,
-      message: "처리내용 사진을 첨부한 경우 심사일을 입력해 주세요.",
-    };
+    return formActionFailure(
+      "처리내용 사진을 첨부한 경우 심사일을 입력해 주세요.",
+      formData
+    );
   }
 
   const existingData = existing.data as {
@@ -1715,7 +1748,7 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.";
-    return { ok: false as const, message: msg };
+    return formActionFailure(msg, formData);
   }
 
   redirect(`/forms/${formId}`);
