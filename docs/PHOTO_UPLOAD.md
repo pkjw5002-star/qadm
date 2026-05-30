@@ -19,7 +19,7 @@ Vercel은 디스크에 파일을 남길 수 없습니다. **클라이언트 Stor
 
 1. [Firebase 콘솔](https://console.firebase.google.com) → 프로젝트 `qadm-29e97`
 2. **Build** → **Storage** → **Get started** (아직 없으면)
-3. 리전은 Neon DB와 가까운 곳 권장
+3. 리전은 **`asia-northeast3`(서울)** 권장 — US 리전이면 [STORAGE_ASIA_MIGRATION.md](./STORAGE_ASIA_MIGRATION.md) 참고
 
 ## 2. Storage 규칙 배포 (필수)
 

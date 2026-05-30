@@ -1,5 +1,12 @@
 {
-  "storage": {
-    "rules": "storage.rules"
-  }
+  "storage": [
+    {
+      "bucket": "qadm-29e97.firebasestorage.app",
+      "rules": "storage.rules"
+    },
+    {
+      "bucket": "qadm-29e97-asia-ne3",
+      "rules": "storage.rules"
+    }
+  ]
 }

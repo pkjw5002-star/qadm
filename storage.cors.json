@@ -1,0 +1,17 @@
+[
+  {
+    "origin": [
+      "http://localhost:3000",
+      "https://qadm.vercel.app",
+      "https://*.vercel.app"
+    ],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "X-Firebase-Storage-*"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

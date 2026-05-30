@@ -7,6 +7,11 @@ let cached: FirebaseStorage | null | undefined;
 export function getClientStorage(): FirebaseStorage | null {
   if (cached !== undefined) return cached;
   const app = getFirebaseApp();
-  cached = app ? getStorage(app) : null;
+  if (!app) {
+    cached = null;
+    return cached;
+  }
+  const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim();
+  cached = bucket ? getStorage(app, `gs://${bucket}`) : getStorage(app);
   return cached;
 }

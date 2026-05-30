@@ -36,7 +36,8 @@ Production · Preview · Development 모두에 추가:
 
 ## Storage 규칙 (필수)
 
-Firebase 콘솔 → **Storage** → **Rules** 탭 → `storage.rules` 내용 붙여넣기 → **게시**
+Firebase 콘솔 → **Storage** → **Rules** 탭 → `storage.rules` 내용 붙여넣기 → **게시**  
+아시아 버킷 사용 시: [STORAGE_ASIA_MIGRATION.md](./STORAGE_ASIA_MIGRATION.md) 3단계 참고
 
 또는 Firebase CLI:
 
