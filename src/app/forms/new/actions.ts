@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -22,6 +23,12 @@ import {
 import { urlsToPhotoRef } from "@/lib/photoRef";
 import { buildListSnapshot } from "@/lib/formListSnapshot";
 import type { FormType } from "@/generated/prisma/client";
+
+function revalidateAfterFormChange(formId: string) {
+  revalidatePath("/forms");
+  revalidatePath(`/forms/${formId}`);
+  revalidatePath(`/forms/${formId}/edit`);
+}
 
 function listSnapshotField(
   type: FormType,
@@ -120,6 +127,26 @@ function formDataToValues(formData: FormData): Record<string, string> {
     if (typeof value === "string") out[key] = value;
   }
   return out;
+}
+
+function abLikeHandlingReport(d: {
+  abHandlingDate?: string;
+  abPlannedDateReason?: string;
+  abCauseAndActionPrevention?: string;
+}, handlingPhoto?: PhotoRef | null) {
+  const hasHandling = Boolean(
+    d.abHandlingDate ||
+      d.abPlannedDateReason ||
+      d.abCauseAndActionPrevention ||
+      handlingPhoto
+  );
+  if (!hasHandling) return undefined;
+  return {
+    date: d.abHandlingDate ?? "",
+    plannedDateReason: d.abPlannedDateReason ?? "",
+    causeAndActionPrevention: d.abCauseAndActionPrevention ?? "",
+    ...(handlingPhoto ? { photoAttachment: handlingPhoto } : {}),
+  };
 }
 
 function formActionFailure(
@@ -786,6 +813,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
       return formActionFailure(msg, formData);
     }
 
+    revalidateAfterFormChange(createdId);
     redirect(`/forms/${createdId}`);
   }
 
@@ -853,6 +881,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
       select: { id: true },
     });
 
+    revalidateAfterFormChange(created.id);
     redirect(`/forms/${created.id}`);
   }
 
@@ -863,11 +892,6 @@ export async function createFormAction(_: unknown, formData: FormData) {
     const d = parsed.data;
     const formNo = await getNextAbnormalReportFormNo(prisma);
     const title = formNo;
-    const hasHandling = Boolean(
-      d.abPlannedDateReason ||
-        d.abCauseAndActionPrevention ||
-        photos.handlingPhoto
-    );
     const hasConfirm = Boolean(d.abConfirmContent);
 
     const data = {
@@ -881,17 +905,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
           handlingDepartmentOwner: d.abHandlingDepartmentOwner,
           ...(photos.reportPhoto ? { photoAttachment: photos.reportPhoto } : {}),
         },
-        handlingReport:
-          hasHandling && d.abHandlingDate
-            ? {
-                date: d.abHandlingDate,
-                plannedDateReason: d.abPlannedDateReason ?? "",
-                causeAndActionPrevention: d.abCauseAndActionPrevention ?? "",
-                ...(photos.handlingPhoto
-                  ? { photoAttachment: photos.handlingPhoto }
-                  : {}),
-              }
-            : undefined,
+        handlingReport: abLikeHandlingReport(d, photos.handlingPhoto),
         reporterConfirm:
           hasConfirm && d.abConfirmDate
             ? {
@@ -927,6 +941,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
       select: { id: true },
     });
 
+    revalidateAfterFormChange(created.id);
     redirect(`/forms/${created.id}`);
   }
 
@@ -937,11 +952,6 @@ export async function createFormAction(_: unknown, formData: FormData) {
     const d = parsed.data;
     const formNo = await getNextWorkCoopFormNo(prisma);
     const title = formNo;
-    const hasHandling = Boolean(
-      d.abPlannedDateReason ||
-        d.abCauseAndActionPrevention ||
-        photos.handlingPhoto
-    );
     const hasConfirm = Boolean(d.abConfirmContent);
 
     const data = {
@@ -955,17 +965,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
           handlingDepartmentOwner: d.abHandlingDepartmentOwner,
           ...(photos.reportPhoto ? { photoAttachment: photos.reportPhoto } : {}),
         },
-        handlingReport:
-          hasHandling && d.abHandlingDate
-            ? {
-                date: d.abHandlingDate,
-                plannedDateReason: d.abPlannedDateReason ?? "",
-                causeAndActionPrevention: d.abCauseAndActionPrevention ?? "",
-                ...(photos.handlingPhoto
-                  ? { photoAttachment: photos.handlingPhoto }
-                  : {}),
-              }
-            : undefined,
+        handlingReport: abLikeHandlingReport(d, photos.handlingPhoto),
         reporterConfirm:
           hasConfirm && d.abConfirmDate
             ? {
@@ -1001,6 +1001,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
       select: { id: true },
     });
 
+    revalidateAfterFormChange(created.id);
     redirect(`/forms/${created.id}`);
   }
 
@@ -1081,6 +1082,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
       select: { id: true },
     });
 
+    revalidateAfterFormChange(created.id);
     redirect(`/forms/${created.id}`);
   }
 
@@ -1210,6 +1212,7 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
     return formActionFailure(msg, formData);
   }
 
+  revalidateAfterFormChange(formId);
   redirect(`/forms/${formId}`);
 }
 
@@ -1363,6 +1366,7 @@ export async function updateQualityImprovementFormAction(
     return formActionFailure(msg, formData);
   }
 
+  revalidateAfterFormChange(formId);
   redirect(`/forms/${formId}`);
 }
 
@@ -1427,9 +1431,6 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
   const existingNo =
     existingAb?.formNo != null ? String(existingAb.formNo) : existing.title;
   const title = existingNo || existing.title;
-  const hasHandling = Boolean(
-    d.abPlannedDateReason || d.abCauseAndActionPrevention || handlingPhoto
-  );
   const hasConfirm = Boolean(d.abConfirmContent);
 
   const data = {
@@ -1443,15 +1444,7 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
         handlingDepartmentOwner: d.abHandlingDepartmentOwner,
         ...(reportPhoto ? { photoAttachment: reportPhoto } : {}),
       },
-      handlingReport:
-        hasHandling && d.abHandlingDate
-          ? {
-              date: d.abHandlingDate,
-              plannedDateReason: d.abPlannedDateReason ?? "",
-              causeAndActionPrevention: d.abCauseAndActionPrevention ?? "",
-              ...(handlingPhoto ? { photoAttachment: handlingPhoto } : {}),
-            }
-          : undefined,
+      handlingReport: abLikeHandlingReport(d, handlingPhoto),
       reporterConfirm:
         hasConfirm && d.abConfirmDate
           ? {
@@ -1489,6 +1482,7 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
     return formActionFailure(msg, formData);
   }
 
+  revalidateAfterFormChange(formId);
   redirect(`/forms/${formId}`);
 }
 
@@ -1557,9 +1551,6 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
   const existingNo =
     existingWc?.formNo != null ? String(existingWc.formNo) : existing.title;
   const title = existingNo || existing.title;
-  const hasHandling = Boolean(
-    d.abPlannedDateReason || d.abCauseAndActionPrevention || handlingPhoto
-  );
   const hasConfirm = Boolean(d.abConfirmContent);
 
   const data = {
@@ -1573,15 +1564,7 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
         handlingDepartmentOwner: d.abHandlingDepartmentOwner,
         ...(reportPhoto ? { photoAttachment: reportPhoto } : {}),
       },
-      handlingReport:
-        hasHandling && d.abHandlingDate
-          ? {
-              date: d.abHandlingDate,
-              plannedDateReason: d.abPlannedDateReason ?? "",
-              causeAndActionPrevention: d.abCauseAndActionPrevention ?? "",
-              ...(handlingPhoto ? { photoAttachment: handlingPhoto } : {}),
-            }
-          : undefined,
+      handlingReport: abLikeHandlingReport(d, handlingPhoto),
       reporterConfirm:
         hasConfirm && d.abConfirmDate
           ? {
@@ -1619,6 +1602,7 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
     return formActionFailure(msg, formData);
   }
 
+  revalidateAfterFormChange(formId);
   redirect(`/forms/${formId}`);
 }
 
@@ -1751,5 +1735,6 @@ export async function updateSuggestionFormAction(_: unknown, formData: FormData)
     return formActionFailure(msg, formData);
   }
 
+  revalidateAfterFormChange(formId);
   redirect(`/forms/${formId}`);
 }
