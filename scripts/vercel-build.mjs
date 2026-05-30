@@ -29,8 +29,23 @@ if (dbUrl.startsWith("file:") || dbUrl.startsWith("sqlite:")) {
   process.exit(1);
 }
 
-console.log("[Vercel Build] prisma migrate deploy …");
-execSync("npx prisma migrate deploy", { stdio: "inherit" });
+function run(step, command) {
+  console.log(`[Vercel Build] ${step} …`);
+  try {
+    execSync(command, { stdio: "inherit" });
+  } catch {
+    console.error(`
+[Vercel Build] FAILED at: ${step}
+Command: ${command}
 
-console.log("[Vercel Build] next build …");
-execSync("npx next build", { stdio: "inherit" });
+Vercel → Deployments → 실패한 배포 → Building 로그에서 위 단계 근처 빨간 줄을 확인하세요.
+- prisma migrate deploy 실패 → DATABASE_URL(Neon) 연결·마이그레이션 상태 확인
+- next build 실패 → TypeScript/번들 오류 (로컬에서 npm run vercel-build 재현)
+`);
+    process.exit(1);
+  }
+}
+
+run("prisma generate", "npx prisma generate");
+run("prisma migrate deploy", "npx prisma migrate deploy");
+run("next build", "npx next build");
