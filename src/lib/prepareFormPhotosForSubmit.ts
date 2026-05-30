@@ -2,7 +2,7 @@ import { FORM_PHOTO_FIELD_PAIRS } from "@/lib/formPhotoFields";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
-const UPLOAD_CONCURRENCY = 4;
+const UPLOAD_CONCURRENCY = 5;
 
 export function hasFormPhotoFiles(formData: FormData): boolean {
   return FORM_PHOTO_FIELD_PAIRS.some(({ fileField }) => {

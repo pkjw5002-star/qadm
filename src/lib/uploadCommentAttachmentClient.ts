@@ -5,6 +5,16 @@ import {
   validateCommentAttachmentFile,
 } from "@/lib/commentAttachmentTypes";
 import { getClientStorage } from "@/lib/firebaseStorageClient";
+import { buildFirebasePublicUrl } from "@/lib/storagePublicUrl";
+
+async function resolveUploadUrl(
+  objectPath: string,
+  storageRef: ReturnType<typeof ref>
+): Promise<string> {
+  const direct = buildFirebasePublicUrl(objectPath);
+  if (direct) return direct;
+  return getDownloadURL(storageRef);
+}
 
 /** 브라우저에서 Firebase Storage `comments/` 경로로 업로드 */
 export async function uploadCommentAttachmentClient(
@@ -39,7 +49,7 @@ export async function uploadCommentAttachmentClient(
     const objectPath = `comments/${crypto.randomUUID()}${ext}`;
     const storageRef = ref(storage, objectPath);
     await uploadBytes(storageRef, toUpload, { contentType: mime });
-    const url = await getDownloadURL(storageRef);
+    const url = await resolveUploadUrl(objectPath, storageRef);
     return {
       ok: true,
       url,

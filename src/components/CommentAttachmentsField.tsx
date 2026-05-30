@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   type CommentAttachmentMeta,
   COMMENT_ATTACHMENT_ACCEPT,
@@ -13,15 +13,24 @@ import {
   COMMENT_ATTACHMENT_URL_FIELD,
 } from "@/lib/prepareCommentAttachmentsForSubmit";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { prewarmFirebaseUpload } from "@/lib/prewarmFirebaseUpload";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
 const MAX_ATTACHMENTS = 10;
-const UPLOAD_CONCURRENCY = 4;
+const UPLOAD_CONCURRENCY = 5;
 
 export default function CommentAttachmentsField() {
   const [items, setItems] = useState<CommentAttachmentMeta[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isFirebaseConfigured()) prewarmFirebaseUpload();
+  }, []);
 
   const uploadFiles = useCallback(async (files: FileList | File[]) => {
     const list = [...files].filter((f) => f.size > 0);
@@ -36,6 +45,7 @@ export default function CommentAttachmentsField() {
 
     setError(null);
     setUploading(true);
+    setUploadProgress({ done: 0, total: list.length });
 
     try {
       const { uploadCommentAttachmentClient } = await import(
@@ -44,26 +54,33 @@ export default function CommentAttachmentsField() {
       const results = await runWithConcurrency(
         list,
         UPLOAD_CONCURRENCY,
-        (f) => uploadCommentAttachmentClient(f)
+        async (f) => {
+          const result = await uploadCommentAttachmentClient(f);
+          if (result.ok) {
+            setItems((prev) => {
+              const next = [...prev, { url: result.url, name: result.name, mime: result.mime }];
+              const seen = new Set<string>();
+              return next.filter((a) => {
+                if (seen.has(a.url)) return false;
+                seen.add(a.url);
+                return true;
+              }).slice(0, MAX_ATTACHMENTS);
+            });
+          }
+          setUploadProgress((p) =>
+            p ? { done: p.done + 1, total: p.total } : null
+          );
+          return result;
+        }
       );
       const failed = results.find((r) => !r.ok);
       if (failed && !failed.ok) {
         setError(failed.message);
         return;
       }
-      const added = results
-        .filter((r): r is { ok: true } & CommentAttachmentMeta => r.ok)
-        .map((r) => ({ url: r.url, name: r.name, mime: r.mime }));
-
-      setItems((prev) => {
-        const merged = [...prev];
-        for (const a of added) {
-          if (!merged.some((m) => m.url === a.url)) merged.push(a);
-        }
-        return merged.slice(0, MAX_ATTACHMENTS);
-      });
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   }, []);
 
@@ -132,7 +149,11 @@ export default function CommentAttachmentsField() {
         className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium disabled:opacity-50"
       />
 
-      {uploading ? (
+      {uploading && uploadProgress ? (
+        <p className="text-xs text-zinc-600">
+          파일 업로드 중… ({uploadProgress.done}/{uploadProgress.total})
+        </p>
+      ) : uploading ? (
         <p className="text-xs text-zinc-600">파일 업로드 중…</p>
       ) : null}
       {error ? <p className="text-xs text-red-600">{error}</p> : null}

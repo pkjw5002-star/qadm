@@ -1,6 +1,7 @@
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { compressImageFile } from "@/lib/compressImageFile";
 import { getClientStorage } from "@/lib/firebaseStorageClient";
+import { buildFirebasePublicUrl } from "@/lib/storagePublicUrl";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -29,8 +30,16 @@ function validateImageFile(file: File):
   return { ok: true, ext, mime };
 }
 
+async function resolveUploadUrl(
+  objectPath: string,
+  storageRef: ReturnType<typeof ref>
+): Promise<string> {
+  const direct = buildFirebasePublicUrl(objectPath);
+  if (direct) return direct;
+  return getDownloadURL(storageRef);
+}
+
 export type UploadFormPhotoOptions = {
-  /** FormPhotoField 등에서 이미 압축한 경우 */
   skipCompress?: boolean;
 };
 
@@ -61,7 +70,7 @@ export async function uploadFormPhotoClient(
     const objectPath = `forms/${crypto.randomUUID()}${ext}`;
     const storageRef = ref(storage, objectPath);
     await uploadBytes(storageRef, toUpload, { contentType: mime });
-    const url = await getDownloadURL(storageRef);
+    const url = await resolveUploadUrl(objectPath, storageRef);
     return { ok: true, url };
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
@@ -80,7 +89,6 @@ export async function uploadFormPhotoClient(
   }
 }
 
-/** 압축 후 업로드 (파일당 파이프라인 — 전체 압축 끝날 때까지 업로드 대기하지 않음) */
 export async function compressAndUploadFormPhoto(
   file: File
 ): Promise<{ ok: true; url: string } | { ok: false; message: string }> {

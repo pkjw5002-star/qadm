@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { prewarmFirebaseUpload } from "@/lib/prewarmFirebaseUpload";
 import { photoRefToUrlList, type PhotoRef } from "@/lib/photoRef";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
-/** 압축·업로드를 파일마다 이어서 처리 (동시 4장) */
-const UPLOAD_CONCURRENCY = 4;
+const UPLOAD_CONCURRENCY = 5;
+
+type PhotoSlot = {
+  key: string;
+  previewSrc: string;
+  storedUrl?: string;
+  pending: boolean;
+};
 
 type FormPhotoFieldProps = {
   label?: string;
@@ -24,10 +31,20 @@ export default function FormPhotoField({
   defaultPhoto,
 }: FormPhotoFieldProps) {
   const initialUrls = photoRefToUrlList(defaultPhoto);
-  const [urls, setUrls] = useState<string[]>(() => [...initialUrls]);
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+
+  const [slots, setSlots] = useState<PhotoSlot[]>(() =>
+    initialUrls.map((url) => ({
+      key: url,
+      previewSrc: url,
+      storedUrl: url,
+      pending: false,
+    }))
+  );
   const [cleared, setCleared] = useState(false);
   const markRemoved =
-    cleared || (urls.length === 0 && initialUrls.length > 0);
+    cleared ||
+    (slots.every((s) => !s.storedUrl) && initialUrls.length > 0);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{
     done: number;
@@ -35,12 +52,33 @@ export default function FormPhotoField({
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const appendUrl = useCallback((url: string) => {
-    setUrls((prev) => {
-      if (prev.includes(url)) return prev;
-      return [...prev, url].slice(0, 20);
-    });
+  useEffect(() => {
+    if (isFirebaseConfigured()) prewarmFirebaseUpload();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      for (const u of blobUrlsRef.current) URL.revokeObjectURL(u);
+      blobUrlsRef.current.clear();
+    };
+  }, []);
+
+  const replaceSlot = useCallback(
+    (key: string, storedUrl: string, revokePreview?: string) => {
+      if (revokePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(revokePreview);
+        blobUrlsRef.current.delete(revokePreview);
+      }
+      setSlots((prev) =>
+        prev.map((s) =>
+          s.key === key
+            ? { key: storedUrl, previewSrc: storedUrl, storedUrl, pending: false }
+            : s
+        )
+      );
+    },
+    []
+  );
 
   const uploadFiles = useCallback(
     async (files: FileList | File[]) => {
@@ -59,18 +97,33 @@ export default function FormPhotoField({
       setUploadProgress({ done: 0, total: list.length });
       setCleared(false);
 
+      const pendingSlots: PhotoSlot[] = list.map((f) => {
+        const previewSrc = URL.createObjectURL(f);
+        blobUrlsRef.current.add(previewSrc);
+        return {
+          key: previewSrc,
+          previewSrc,
+          pending: true,
+        };
+      });
+      setSlots((prev) => [...prev, ...pendingSlots].slice(0, 20));
+
       try {
         const { compressAndUploadFormPhoto } = await import(
           "@/lib/uploadFormPhotoClient"
         );
 
         const results = await runWithConcurrency(
-          list,
+          list.map((file, i) => ({ file, slot: pendingSlots[i] })),
           UPLOAD_CONCURRENCY,
-          async (f) => {
-            const result = await compressAndUploadFormPhoto(f);
+          async ({ file, slot }) => {
+            const result = await compressAndUploadFormPhoto(file);
             if (result.ok) {
-              appendUrl(result.url);
+              replaceSlot(slot.key, result.url, slot.previewSrc);
+            } else {
+              URL.revokeObjectURL(slot.previewSrc);
+              blobUrlsRef.current.delete(slot.previewSrc);
+              setSlots((prev) => prev.filter((s) => s.key !== slot.key));
             }
             setUploadProgress((p) =>
               p ? { done: p.done + 1, total: p.total } : null
@@ -88,18 +141,35 @@ export default function FormPhotoField({
         setUploadProgress(null);
       }
     },
-    [appendUrl]
+    [replaceSlot]
   );
 
   function removeAt(index: number) {
-    setUrls((prev) => prev.filter((_, i) => i !== index));
+    setSlots((prev) => {
+      const target = prev[index];
+      if (target?.previewSrc.startsWith("blob:")) {
+        URL.revokeObjectURL(target.previewSrc);
+        blobUrlsRef.current.delete(target.previewSrc);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   }
 
   function removeAll() {
-    setUrls([]);
+    for (const s of slots) {
+      if (s.previewSrc.startsWith("blob:")) {
+        URL.revokeObjectURL(s.previewSrc);
+        blobUrlsRef.current.delete(s.previewSrc);
+      }
+    }
+    setSlots([]);
     setCleared(true);
     setError(null);
   }
+
+  const storedUrls = slots
+    .map((s) => s.storedUrl)
+    .filter((u): u is string => Boolean(u));
 
   return (
     <div className="space-y-2">
@@ -109,19 +179,24 @@ export default function FormPhotoField({
         가능합니다.
       </p>
 
-      {urls.length > 0 ? (
+      {slots.length > 0 ? (
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {urls.map((url, i) => (
+          {slots.map((slot, i) => (
             <li
-              key={`${url}-${i}`}
+              key={slot.key}
               className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={url}
+                src={slot.previewSrc}
                 alt={`첨부 ${i + 1}`}
-                className="h-28 w-full object-cover"
+                className={`h-28 w-full object-cover ${slot.pending ? "opacity-70" : ""}`}
               />
+              {slot.pending ? (
+                <span className="absolute bottom-1 left-1 rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white">
+                  업로드 중
+                </span>
+              ) : null}
               <button
                 type="button"
                 onClick={() => removeAt(i)}
@@ -171,10 +246,16 @@ export default function FormPhotoField({
               .map((s) => s.trim())
               .filter(Boolean);
             if (lines.length === 0) return;
-            setUrls((prev) => {
+            setSlots((prev) => {
               const merged = [...prev];
               for (const line of lines) {
-                if (!merged.includes(line)) merged.push(line);
+                if (merged.some((s) => s.storedUrl === line)) continue;
+                merged.push({
+                  key: line,
+                  previewSrc: line,
+                  storedUrl: line,
+                  pending: false,
+                });
               }
               return merged.slice(0, 20);
             });
@@ -184,12 +265,12 @@ export default function FormPhotoField({
         />
       </label>
 
-      {urls.map((url, i) => (
+      {storedUrls.map((url, i) => (
         <input key={`${urlField}-${i}`} type="hidden" name={urlField} value={url} />
       ))}
       <input type="hidden" name={removeField} value={markRemoved ? "1" : "0"} />
 
-      {urls.length > 0 ? (
+      {slots.length > 0 ? (
         <button
           type="button"
           onClick={removeAll}
