@@ -94,6 +94,17 @@ function applyPersistedToLayout(
       if (p.hidden[id] === true) hidden[id] = true;
     }
   }
+
+  /** 저장된 너비가 비정상적으로 좁으면(헤더 클릭 오동작 등) 기본 레이아웃으로 복구 */
+  const defaultTotal = colIds.reduce(
+    (sum, id) => sum + (defaults.widths[id] ?? 0),
+    0
+  );
+  const appliedTotal = colIds.reduce((sum, id) => sum + (widths[id] ?? 0), 0);
+  if (defaultTotal > 0 && appliedTotal < defaultTotal * 0.65) {
+    return { widths: { ...defaults.widths }, hidden };
+  }
+
   return { widths, hidden };
 }
 
@@ -164,6 +175,7 @@ export default function FormListTable({
     colId: string;
     startX: number;
     startW: number;
+    moved: boolean;
   } | null>(null);
 
   const [panelOpen, setPanelOpen] = useState(false);
@@ -345,18 +357,23 @@ export default function FormListTable({
     const onMove = (e: MouseEvent) => {
       const d = dragRef.current;
       if (!d) return;
+      const delta = e.clientX - d.startX;
+      if (!d.moved && Math.abs(delta) < 4) return;
+      d.moved = true;
       const minW = defaults.minWidths[d.colId] ?? 40;
-      const nw = Math.max(minW, d.startW + e.clientX - d.startX);
+      const nw = Math.max(minW, d.startW + delta);
       setLayout((prev) => ({
         ...prev,
         widths: { ...prev.widths, [d.colId]: nw },
       }));
     };
     const onUp = () => {
-      if (!dragRef.current) return;
+      const d = dragRef.current;
+      if (!d) return;
       dragRef.current = null;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      if (!d.moved) return;
       const { widths: w, hidden: h } = layoutRef.current;
       persist(w, h);
     };
@@ -373,6 +390,7 @@ export default function FormListTable({
       colId,
       startX: clientX,
       startW: layoutRef.current.widths[colId] ?? 80,
+      moved: false,
     };
     // eslint-disable-next-line react-hooks/immutability
     document.body.style.cursor = "col-resize";
@@ -566,7 +584,7 @@ export default function FormListTable({
                   ref={searchOpenColId === id ? searchPanelRef : undefined}
                   className={`relative overflow-hidden px-2 py-2 align-top font-medium ${stickyThClass(col)}`}
                 >
-                  <div className="min-w-0 overflow-hidden pr-4">
+                  <div className="relative z-20 min-w-0 overflow-hidden pr-4">
                     <button
                       type="button"
                       className={`w-full min-w-0 rounded-md px-1 py-0.5 text-left hover:bg-zinc-200/80 ${
@@ -620,7 +638,7 @@ export default function FormListTable({
                   <div
                     role="separator"
                     aria-orientation="vertical"
-                    className="absolute right-0 top-0 z-10 h-full w-1.5 cursor-col-resize select-none hover:bg-sky-200/80"
+                    className="absolute right-0 top-0 z-30 h-full w-1.5 cursor-col-resize select-none hover:bg-sky-200/80"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
