@@ -111,13 +111,15 @@ export default function NewFormClient({
   useEffect(() => {
     if (!editFormId || type !== "COMPLAINT") return;
     const raw = window.location.hash.replace(/^#/, "");
-    if (
-      raw !== "complaint-prod-defect" &&
-      raw !== "complaint-prod-cause"
-    ) {
-      return;
-    }
-    requestAnimationFrame(() => setComplaintTab(3));
+    const tabByHash: Record<string, 1 | 2 | 3 | 4 | 5> = {
+      "complaint-outside-as": 2,
+      "complaint-prod-defect": 3,
+      "complaint-prod-cause": 3,
+      "complaint-lab-cause": 4,
+    };
+    const tab = tabByHash[raw];
+    if (!tab) return;
+    requestAnimationFrame(() => setComplaintTab(tab));
     const run = () => {
       const el = document.getElementById(raw);
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -702,6 +704,7 @@ export default function NewFormClient({
                     사외 AS 실시내용 및 결과
                   </span>
                   <textarea
+                    id="complaint-outside-as"
                     name="outsideAsContentResult"
                     rows={6}
                     defaultValue={complaintVals.outsideAsContentResult ?? ""}
@@ -847,6 +850,7 @@ export default function NewFormClient({
                     원인분석
                   </span>
                   <textarea
+                    id="complaint-lab-cause"
                     name="labCauseAnalysis"
                     rows={5}
                     defaultValue={complaintVals.labCauseAnalysis ?? ""}

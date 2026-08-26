@@ -1,12 +1,15 @@
 /**
- * 기존 Form 행에 listSnapshot 을 채웁니다 (최초 1회).
+ * 기존 Form 행에 listSnapshot 을 채우거나 버전을 갱신합니다.
  *
  *   npm run backfill:list-snapshot
  */
 import { config as loadEnv } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Prisma, PrismaClient } from "../src/generated/prisma/client";
-import { buildListSnapshot } from "../src/lib/formListSnapshot";
+import {
+  buildListSnapshot,
+  isStoredListSnapshotValid,
+} from "../src/lib/formListSnapshot";
 
 loadEnv({ path: ".env", override: true });
 loadEnv({ path: ".env.local", override: true });
@@ -25,18 +28,19 @@ async function main() {
   let updated = 0;
 
   const rows = await prisma.form.findMany({
-    where: { listSnapshot: { equals: Prisma.DbNull } },
     select: {
       id: true,
       type: true,
       title: true,
       data: true,
       createdAt: true,
+      listSnapshot: true,
       createdBy: { select: { name: true } },
     },
   });
 
   for (const row of rows) {
+    if (isStoredListSnapshotValid(row.type, row.listSnapshot)) continue;
     const snap = buildListSnapshot({
       type: row.type,
       data: row.data,

@@ -1,6 +1,6 @@
 import type { FormListColumn } from "./formListTableTypes";
 
-export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v1";
+export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v2";
 
 export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 56, minWidth: 40, variant: "no" },
@@ -14,14 +14,14 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
   {
     id: "customerInfo",
     label: "고객정보",
-    defaultWidth: 100,
+    defaultWidth: 120,
     minWidth: 64,
     variant: "text",
   },
   {
     id: "productName",
     label: "제품명",
-    defaultWidth: 88,
+    defaultWidth: 100,
     minWidth: 56,
     variant: "text",
   },
@@ -32,76 +32,27 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
     minWidth: 96,
     variant: "text",
   },
-  { id: "content", label: "내용", defaultWidth: 144, minWidth: 80, variant: "text" },
+  { id: "content", label: "내용", defaultWidth: 160, minWidth: 80, variant: "text" },
   {
     id: "actionContent",
     label: "조치내용",
-    defaultWidth: 144,
+    defaultWidth: 160,
     minWidth: 80,
     variant: "text",
   },
   {
-    id: "outsideAsMeta",
-    label: "사외AS일자및실시자",
-    defaultWidth: 100,
-    minWidth: 72,
+    id: "outsideAs",
+    label: "사외AS",
+    defaultWidth: 72,
+    minWidth: 56,
     variant: "compact",
   },
   {
-    id: "outsideAsContent",
-    label: "사외AS내용",
-    defaultWidth: 144,
-    minWidth: 80,
-    variant: "text",
-  },
-  {
-    id: "outsideAsTime",
-    label: "사외AS시간",
-    defaultWidth: 112,
-    minWidth: 64,
-    variant: "text",
-  },
-  {
-    id: "recoveryDate",
-    label: "회수일",
-    defaultWidth: 88,
-    minWidth: 64,
-    variant: "date",
-  },
-  {
-    id: "causeAnalysisDate",
-    label: "원인분석일자",
-    defaultWidth: 88,
-    minWidth: 64,
-    variant: "date",
-  },
-  {
-    id: "defectPhenomenon",
-    label: "불량현상",
-    defaultWidth: 208,
-    minWidth: 100,
-    variant: "text",
-  },
-  {
-    id: "defectCauseAnalysis",
-    label: "불량원인분석",
-    defaultWidth: 208,
-    minWidth: 100,
-    variant: "text",
-  },
-  {
-    id: "recurrencePrevention",
-    label: "재발방지대책",
-    defaultWidth: 208,
-    minWidth: 100,
-    variant: "text",
-  },
-  {
-    id: "recoveryHandling",
-    label: "회수품처리내용",
-    defaultWidth: 176,
-    minWidth: 80,
-    variant: "text",
+    id: "causeAnalysis",
+    label: "원인분석",
+    defaultWidth: 72,
+    minWidth: 56,
+    variant: "compact",
   },
   {
     id: "comment",

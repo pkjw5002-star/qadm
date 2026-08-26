@@ -731,14 +731,28 @@ export default function FormListTable({
                     );
                   }
                   if (variant === "compact") {
+                    const href = row.cellHref?.[id];
+                    const compactInner = (
+                      <div className="truncate" title={tip}>
+                        {v}
+                      </div>
+                    );
                     return (
                       <td
                         key={id}
                         className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
                       >
-                        <div className="truncate" title={tip}>
-                          {v}
-                        </div>
+                        {href && v.trim() !== "" && v !== "—" ? (
+                          <Link
+                            href={href}
+                            className={`block font-medium ${hrefBodyClass}`}
+                            title={tip || v}
+                          >
+                            {compactInner}
+                          </Link>
+                        ) : (
+                          compactInner
+                        )}
                       </td>
                     );
                   }

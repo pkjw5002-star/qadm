@@ -1,7 +1,7 @@
 import type { FormType } from "@/generated/prisma/client";
 import type { FormListRow } from "@/app/forms/formListTableTypes";
 
-export const LIST_SNAPSHOT_VERSION = 1;
+export const LIST_SNAPSHOT_VERSION = 2;
 
 export type StoredListSnapshot =
   | {
@@ -47,77 +47,8 @@ function textOrDash(v: unknown): string {
   return s !== "" ? s : "—";
 }
 
-function outsideAsDateSlashExecutor(
-  dateRaw: unknown,
-  executorRaw: unknown
-): string {
-  const dateLabel = formatListDate(dateRaw);
-  const execLabel =
-    executorRaw != null && String(executorRaw).trim() !== ""
-      ? String(executorRaw).trim()
-      : "—";
-  if (dateLabel === "—" && execLabel === "—") return "—";
-  return `${dateLabel}/${execLabel}`;
-}
-
-function defectPhenomenonText(
-  prod:
-    | {
-        recoveredOperationAndAppearanceDefect?: unknown;
-        recoveredOperation?: unknown;
-        appearanceDefectPhenomenon?: unknown;
-      }
-    | undefined
-): string {
-  if (!prod) return "—";
-  const merged = prod.recoveredOperationAndAppearanceDefect;
-  if (
-    merged !== undefined &&
-    merged !== null &&
-    String(merged).trim() !== ""
-  ) {
-    return String(merged);
-  }
-  const legacyOp = prod.recoveredOperation;
-  const legacyAp = prod.appearanceDefectPhenomenon;
-  const parts = [legacyOp, legacyAp]
-    .filter(
-      (x) => x !== undefined && x !== null && String(x).trim() !== ""
-    )
-    .map(String);
-  return parts.length > 0 ? parts.join("\n") : "—";
-}
-
-function recoveryHandlingSummaryText(r?: {
-  processingContent?: unknown;
-  processingDetail?: unknown;
-}): string {
-  if (!r) return "—";
-  const c =
-    r.processingContent != null && String(r.processingContent).trim() !== ""
-      ? String(r.processingContent)
-      : "";
-  const d =
-    r.processingDetail != null && String(r.processingDetail).trim() !== ""
-      ? String(r.processingDetail)
-      : "";
-  if (!c && !d) return "—";
-  if (c && d) return `${c} / ${d}`;
-  return c || d;
-}
-
-function prodLabCombinedField(prodVal: unknown, labVal: unknown): string {
-  const p =
-    prodVal != null && String(prodVal).trim() !== ""
-      ? String(prodVal).trim()
-      : "";
-  const l =
-    labVal != null && String(labVal).trim() !== ""
-      ? String(labVal).trim()
-      : "";
-  if (!p && !l) return "—";
-  if (p && l) return `${p}\n${l}`;
-  return p || l;
+function hasNonEmptyText(v: unknown): boolean {
+  return v !== undefined && v !== null && String(v).trim() !== "";
 }
 
 function complaintListRow(data: unknown, title: string) {
@@ -134,28 +65,15 @@ function complaintListRow(data: unknown, title: string) {
         actionContent?: unknown;
       };
       outsideAs?: {
-        date?: unknown;
-        executor?: unknown;
         contentAndResult?: unknown;
-        duration?: unknown;
       };
       productionHandlingReport?: {
         defectiveProductRecoveryDate?: unknown;
         causeAnalysisDate?: unknown;
-        recoveredOperationAndAppearanceDefect?: unknown;
-        recoveredOperation?: unknown;
-        appearanceDefectPhenomenon?: unknown;
         defectCauseAnalysis?: unknown;
-        recurrencePreventionMeasures?: unknown;
       };
       researchLabHandlingReport?: {
         causeAnalysis?: unknown;
-        recurrencePreventionMeasures?: unknown;
-      };
-      recoveredProductHandling?: {
-        processingDate?: unknown;
-        processingContent?: unknown;
-        processingDetail?: unknown;
       };
     };
   };
@@ -164,7 +82,6 @@ function complaintListRow(data: unknown, title: string) {
   const o = c?.outsideAs;
   const prod = c?.productionHandlingReport;
   const lab = c?.researchLabHandlingReport;
-  const recv = c?.recoveredProductHandling;
 
   const formNo =
     c?.formNo != null && String(c.formNo).trim() !== ""
@@ -184,6 +101,11 @@ function complaintListRow(data: unknown, title: string) {
       ? String(r.actionContent)
       : "—";
 
+  const outsideAsDone = hasNonEmptyText(o?.contentAndResult);
+  const prodCauseDone = hasNonEmptyText(prod?.defectCauseAnalysis);
+  const labCauseDone = hasNonEmptyText(lab?.causeAnalysis);
+  const causeAnalysisDone = prodCauseDone || labCauseDone;
+
   return {
     no: formNo,
     receiptDate: r?.date,
@@ -192,25 +114,16 @@ function complaintListRow(data: unknown, title: string) {
     departmentAndOwner: r?.departmentAndOwner,
     content,
     actionContent,
-    outsideAsDateAndExecutor: outsideAsDateSlashExecutor(o?.date, o?.executor),
-    outsideAsContent:
-      o?.contentAndResult != null &&
-      String(o.contentAndResult).trim() !== ""
-        ? String(o.contentAndResult)
-        : "—",
-    outsideAsTime: textOrDash(o?.duration),
+    outsideAsStatus: outsideAsDone ? "완료" : "",
+    causeAnalysisStatus: causeAnalysisDone ? "완료" : "",
+    /** 원인분석 완료 시 생산 우선, 없으면 연구소로 앵커 */
+    causeAnalysisAnchor: prodCauseDone
+      ? "complaint-prod-cause"
+      : labCauseDone
+        ? "complaint-lab-cause"
+        : null,
     recoveryDate: prod?.defectiveProductRecoveryDate,
     causeAnalysisDate: prod?.causeAnalysisDate,
-    defectPhenomenon: defectPhenomenonText(prod),
-    defectCauseAnalysis: prodLabCombinedField(
-      prod?.defectCauseAnalysis,
-      lab?.causeAnalysis
-    ),
-    recurrencePrevention: prodLabCombinedField(
-      prod?.recurrencePreventionMeasures,
-      lab?.recurrencePreventionMeasures
-    ),
-    recoveryHandlingContent: recoveryHandlingSummaryText(recv),
   };
 }
 
@@ -413,6 +326,14 @@ export function buildListSnapshot(params: {
     const highlightPending = complaintListDateMissing(row.causeAnalysisDate);
     const no = String(row.no).trim() !== "" ? String(row.no) : "—";
 
+    const cellHref: Partial<Record<string, string>> = {};
+    if (row.outsideAsStatus === "완료") {
+      cellHref.outsideAs = "complaint-outside-as";
+    }
+    if (row.causeAnalysisStatus === "완료" && row.causeAnalysisAnchor) {
+      cellHref.causeAnalysis = row.causeAnalysisAnchor;
+    }
+
     return {
       v: LIST_SNAPSHOT_VERSION,
       kind: "COMPLAINT",
@@ -424,20 +345,10 @@ export function buildListSnapshot(params: {
         departmentOwner: deptLabel,
         content: row.content,
         actionContent: row.actionContent,
-        outsideAsMeta: row.outsideAsDateAndExecutor,
-        outsideAsContent: row.outsideAsContent,
-        outsideAsTime: row.outsideAsTime,
-        recoveryDate: formatListDate(row.recoveryDate),
-        causeAnalysisDate: formatListDate(row.causeAnalysisDate),
-        defectPhenomenon: row.defectPhenomenon,
-        defectCauseAnalysis: row.defectCauseAnalysis,
-        recurrencePrevention: row.recurrencePrevention,
-        recoveryHandling: row.recoveryHandlingContent,
+        outsideAs: row.outsideAsStatus,
+        causeAnalysis: row.causeAnalysisStatus,
       },
-      cellHref: {
-        defectPhenomenon: "complaint-prod-defect",
-        defectCauseAnalysis: "complaint-prod-cause",
-      },
+      cellHref,
       highlightPending,
       filterNotRecovered: missingRecoveryDate,
       filterRecoveredIncomplete: recoveredWithoutCauseAnalysisDate,
