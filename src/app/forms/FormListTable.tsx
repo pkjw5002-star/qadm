@@ -564,12 +564,12 @@ export default function FormListTable({
                 <th
                   key={id}
                   ref={searchOpenColId === id ? searchPanelRef : undefined}
-                  className={`relative px-2 py-2 align-top font-medium ${stickyThClass(col)}`}
+                  className={`relative overflow-hidden px-2 py-2 align-top font-medium ${stickyThClass(col)}`}
                 >
-                  <div className="min-w-0 pr-4">
+                  <div className="min-w-0 overflow-hidden pr-4">
                     <button
                       type="button"
-                      className={`w-full rounded-md px-1 py-0.5 text-left hover:bg-zinc-200/80 ${
+                      className={`w-full min-w-0 rounded-md px-1 py-0.5 text-left hover:bg-zinc-200/80 ${
                         columnFilters[id]?.trim()
                           ? "text-sky-800"
                           : "text-zinc-700"
@@ -579,8 +579,13 @@ export default function FormListTable({
                         setSearchOpenColId((cur) => (cur === id ? null : id))
                       }
                     >
-                      <span className="inline-flex max-w-full items-baseline gap-1">
-                        <span className="shrink-0 whitespace-nowrap">{labelFor(id)}</span>
+                      <span className="flex max-w-full items-baseline gap-1">
+                        <span
+                          className="min-w-0 truncate whitespace-nowrap"
+                          title={labelFor(id)}
+                        >
+                          {labelFor(id)}
+                        </span>
                         {columnFilters[id]?.trim() ? (
                           <span
                             className="shrink-0 text-[10px] font-normal text-sky-600"
@@ -601,8 +606,9 @@ export default function FormListTable({
                             [id]: e.target.value,
                           }))
                         }
-                        placeholder={`${labelFor(id)} 검색`}
-                        className="mt-1 w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-normal text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-sky-400"
+                        placeholder="검색"
+                        size={1}
+                        className="mt-1 box-border w-full min-w-0 max-w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-normal text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-sky-400"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => {
