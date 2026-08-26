@@ -580,7 +580,7 @@ export default function FormListTable({
                       }
                     >
                       <span className="inline-flex max-w-full items-baseline gap-1">
-                        <span className="min-w-0 break-words">{labelFor(id)}</span>
+                        <span className="min-w-0 whitespace-nowrap">{labelFor(id)}</span>
                         {columnFilters[id]?.trim() ? (
                           <span
                             className="shrink-0 text-[10px] font-normal text-sky-600"

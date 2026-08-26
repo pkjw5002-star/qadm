@@ -1,6 +1,6 @@
 import type { FormListColumn } from "./formListTableTypes";
 
-export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v3";
+export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v4";
 
 export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -43,15 +43,15 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
   {
     id: "outsideAs",
     label: "사외AS",
-    defaultWidth: 88,
-    minWidth: 64,
+    defaultWidth: 96,
+    minWidth: 72,
     variant: "compact",
   },
   {
     id: "causeAnalysis",
     label: "원인분석",
-    defaultWidth: 88,
-    minWidth: 64,
+    defaultWidth: 104,
+    minWidth: 88,
     variant: "compact",
   },
   {
