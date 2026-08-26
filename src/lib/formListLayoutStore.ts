@@ -62,7 +62,7 @@ export async function saveFormListLayout(
     await setDoc(
       ref,
       {
-        widths: payload.widths ?? {},
+        widths: {},
         hidden: payload.hidden ?? {},
         updatedAt: new Date().toISOString(),
       },

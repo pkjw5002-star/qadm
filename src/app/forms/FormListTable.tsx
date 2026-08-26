@@ -78,33 +78,15 @@ function applyPersistedToLayout(
   colIds: readonly string[],
   defaults: ReturnType<typeof buildDefaults>
 ): LayoutState {
+  /** 열 너비는 저장값을 쓰지 않음(깨진 레이아웃 재발 방지). 숨김만 복원. */
   const widths = { ...defaults.widths };
   const hidden = { ...defaults.hidden };
-  if (p.widths) {
-    for (const id of colIds) {
-      const w = p.widths[id];
-      if (typeof w === "number" && Number.isFinite(w)) {
-        widths[id] = Math.max(defaults.minWidths[id] ?? 40, w);
-      }
-    }
-  }
   if (p.hidden) {
     for (const id of colIds) {
       if (NON_HIDE.has(id)) continue;
       if (p.hidden[id] === true) hidden[id] = true;
     }
   }
-
-  /** 저장된 너비가 비정상적으로 좁으면(헤더 클릭 오동작 등) 기본 레이아웃으로 복구 */
-  const defaultTotal = colIds.reduce(
-    (sum, id) => sum + (defaults.widths[id] ?? 0),
-    0
-  );
-  const appliedTotal = colIds.reduce((sum, id) => sum + (widths[id] ?? 0), 0);
-  if (defaultTotal > 0 && appliedTotal < defaultTotal * 0.65) {
-    return { widths: { ...defaults.widths }, hidden };
-  }
-
   return { widths, hidden };
 }
 
@@ -263,13 +245,10 @@ export default function FormListTable({
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persist = useCallback(
-    (w: Record<string, number>, h: Record<string, boolean>) => {
+    (_w: Record<string, number>, h: Record<string, boolean>) => {
+      /** widths는 저장하지 않음 — 숨김만 유지. 빈 widths로 원격의 깨진 값도 덮어씀. */
       const payload: FormListLayoutPersisted = { widths: {}, hidden: {} };
       for (const id of colIds) {
-        if (w[id] !== defaults.widths[id]) {
-          payload.widths ??= {};
-          payload.widths[id] = w[id];
-        }
         if (h[id]) {
           payload.hidden ??= {};
           payload.hidden[id] = true;
@@ -278,13 +257,10 @@ export default function FormListTable({
 
       if (!userId || !isFirebaseConfigured()) {
         try {
-          const wKeys = payload.widths
-            ? Object.keys(payload.widths).length
-            : 0;
           const hKeys = payload.hidden
             ? Object.keys(payload.hidden).length
             : 0;
-          if (wKeys === 0 && hKeys === 0) {
+          if (hKeys === 0) {
             localStorage.removeItem(storageKey);
           } else {
             localStorage.setItem(storageKey, JSON.stringify(payload));
@@ -302,7 +278,7 @@ export default function FormListTable({
         );
       }, 400);
     },
-    [storageKey, colIds, defaults.widths, userId]
+    [storageKey, colIds, userId]
   );
 
   useEffect(() => {
@@ -311,7 +287,19 @@ export default function FormListTable({
     };
   }, []);
 
-  const { widths, hidden } = layout;
+  const { widths: layoutWidths, hidden } = layout;
+
+  /** 항상 컬럼 정의 기본 너비를 기준으로 하고, 세션 중 리사이즈만 덮어씀 */
+  const widths = useMemo(() => {
+    const next: Record<string, number> = { ...defaults.widths };
+    for (const id of colIds) {
+      const w = layoutWidths[id];
+      if (typeof w === "number" && Number.isFinite(w)) {
+        next[id] = Math.max(defaults.minWidths[id] ?? 40, w);
+      }
+    }
+    return next;
+  }, [colIds, defaults.widths, defaults.minWidths, layoutWidths]);
 
   const visibleCols = useMemo(
     () => colIds.filter((id) => !hidden[id]),
@@ -319,8 +307,8 @@ export default function FormListTable({
   );
 
   const totalWidth = useMemo(
-    () => visibleCols.reduce((s, id) => s + (widths[id] ?? 80), 0),
-    [visibleCols, widths]
+    () => visibleCols.reduce((s, id) => s + (widths[id] ?? defaults.widths[id] ?? 80), 0),
+    [visibleCols, widths, defaults.widths]
   );
 
   const useVirtualRows = filteredRows.length > VIRTUAL_ROW_THRESHOLD;
@@ -565,13 +553,19 @@ export default function FormListTable({
           className="border-separate border-spacing-0 text-sm"
           style={{
             tableLayout: "fixed",
-            width: Math.max(totalWidth, 400),
-            minWidth: Math.max(totalWidth, 400),
+            width: `${Math.max(totalWidth, 400)}px`,
+            minWidth: `${Math.max(totalWidth, 400)}px`,
           }}
         >
           <colgroup>
             {visibleCols.map((id) => (
-              <col key={id} style={{ width: widths[id] ?? 80 }} />
+              <col
+                key={id}
+                style={{
+                  width: `${widths[id] ?? defaults.widths[id] ?? 80}px`,
+                  minWidth: `${defaults.minWidths[id] ?? 40}px`,
+                }}
+              />
             ))}
           </colgroup>
           <thead className="sticky top-0 z-40 border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">

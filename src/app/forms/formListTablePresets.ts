@@ -1,6 +1,6 @@
 import type { FormListColumn } from "./formListTableTypes";
 
-export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v4";
+export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v5";
 
 export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -64,7 +64,7 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
 ];
 
 export const QUALITY_IMPROVEMENT_LIST_STORAGE_KEY =
-  "qadm-quality-improvement-list-table-v3";
+  "qadm-quality-improvement-list-table-v5";
 
 export const QUALITY_IMPROVEMENT_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -134,7 +134,7 @@ export const QUALITY_IMPROVEMENT_LIST_COLUMNS: FormListColumn[] = [
 ];
 
 export const ABNORMAL_REPORT_LIST_STORAGE_KEY =
-  "qadm-abnormal-report-list-table-v3";
+  "qadm-abnormal-report-list-table-v5";
 
 export const ABNORMAL_REPORT_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -203,7 +203,7 @@ export const ABNORMAL_REPORT_LIST_COLUMNS: FormListColumn[] = [
   },
 ];
 
-export const WORK_COOP_LIST_STORAGE_KEY = "qadm-work-coop-list-table-v3";
+export const WORK_COOP_LIST_STORAGE_KEY = "qadm-work-coop-list-table-v5";
 
 export const WORK_COOP_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -272,7 +272,7 @@ export const WORK_COOP_LIST_COLUMNS: FormListColumn[] = [
   },
 ];
 
-export const SUGGESTION_LIST_STORAGE_KEY = "qadm-suggestion-list-table-v3";
+export const SUGGESTION_LIST_STORAGE_KEY = "qadm-suggestion-list-table-v5";
 
 export const SUGGESTION_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
