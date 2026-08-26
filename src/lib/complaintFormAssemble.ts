@@ -99,6 +99,7 @@ export function mergeComplaintPhotos(
 export function assembleComplaintFormData(
   d: {
     receiptDate: string;
+    productCategory: string;
     complaintProductName: string;
     departmentOwnerOptionId: string;
     customerInfo: string;
@@ -224,6 +225,7 @@ export function assembleComplaintFormData(
       tabs: 6,
       receipt: {
         date: d.receiptDate,
+        productCategory: d.productCategory,
         complaintProductName: d.complaintProductName,
         departmentOwnerOptionId: d.departmentOwnerOptionId,
         departmentAndOwner: departmentAndOwnerLabel,

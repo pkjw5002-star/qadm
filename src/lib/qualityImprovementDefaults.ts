@@ -1,10 +1,13 @@
 import type { PhotoRef } from "@/lib/photoRef";
 import { photoRefToUrlFieldValue } from "@/lib/photoRef";
+import type { ProductCategory } from "@/lib/productCategory";
+import { isProductCategory } from "@/lib/productCategory";
 
 /** 품질개선의뢰서 수정 폼의 `defaultValue`용 플랫 필드 */
 export type QualityImprovementDefaults = Partial<{
   qiReceiptDate: string;
   qiWriterName: string;
+  qiProductCategory: ProductCategory | "";
   qiItemSpec: string;
   qiRequestReasonDetails: string;
   qiReviewDepartmentOwner: string;
@@ -61,6 +64,9 @@ export function qualityImprovementJsonToDefaults(
   return {
     qiReceiptDate: dateInput(r?.date),
     qiWriterName: r?.writerName != null ? String(r.writerName) : "",
+    qiProductCategory: isProductCategory(r?.productCategory)
+      ? r.productCategory
+      : "",
     qiItemSpec: r?.itemSpec != null ? String(r.itemSpec) : "",
     qiRequestReasonDetails:
       r?.requestReasonDetails != null ? String(r.requestReasonDetails) : "",

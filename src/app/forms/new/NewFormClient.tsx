@@ -15,6 +15,7 @@ import {
   hasFormPhotoFiles,
   prepareFormPhotosForSubmit,
 } from "@/lib/prepareFormPhotosForSubmit";
+import { PRODUCT_CATEGORY_OPTIONS } from "@/lib/productCategory";
 const FormPhotoField = dynamic(() => import("@/components/FormPhotoField"), {
   ssr: false,
   loading: () => (
@@ -466,8 +467,8 @@ export default function NewFormClient({
 
               <TabPanel active={complaintTab === 1}>
                 <div>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    <label className="block min-w-0">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-12 sm:items-end sm:gap-3">
+                    <label className="block min-w-0 sm:col-span-2">
                       <span className="text-xs font-medium text-zinc-800 sm:text-sm">
                         일자
                         <span className="text-red-600" aria-hidden="true">
@@ -482,11 +483,36 @@ export default function NewFormClient({
                         defaultValue={
                           complaintVals.receiptDate || todayDateInputValue
                         }
-                        className="mt-1 w-full min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
+                        className="mt-1 w-full max-w-[9.5rem] min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-2.5 sm:py-2"
                       />
                     </label>
 
-                    <label className="block min-w-0">
+                    <label className="block min-w-0 sm:col-span-2">
+                      <span className="text-xs font-medium text-zinc-800 sm:text-sm">
+                        품목구분
+                        <span className="text-red-600" aria-hidden="true">
+                          {" "}
+                          *
+                        </span>
+                      </span>
+                      <select
+                        name="productCategory"
+                        required
+                        defaultValue={complaintVals.productCategory ?? ""}
+                        className="mt-1 w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-2.5 sm:py-2"
+                      >
+                        <option value="" disabled>
+                          선택
+                        </option>
+                        {PRODUCT_CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block min-w-0 sm:col-span-4">
                       <span className="text-xs font-medium text-zinc-800 sm:text-sm">
                         불만신고 제품명
                         <span className="text-red-600" aria-hidden="true">
@@ -505,7 +531,7 @@ export default function NewFormClient({
                       />
                     </label>
 
-                    <label className="block min-w-0">
+                    <label className="block min-w-0 sm:col-span-4">
                       <span className="text-xs font-medium text-zinc-800 sm:text-sm">
                         해당부서 및 담당자
                         <span className="text-red-600" aria-hidden="true">
@@ -977,7 +1003,7 @@ export default function NewFormClient({
                       defaultValue={
                         qiVals.qiReceiptDate || todayDateInputValue
                       }
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
+                      className="mt-1 w-full max-w-[9.5rem] rounded-xl border border-zinc-200 px-2.5 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
                   <label className="block min-w-0 md:col-span-2">
@@ -998,7 +1024,31 @@ export default function NewFormClient({
                       autoComplete="name"
                     />
                   </label>
-                  <label className="block min-w-0 md:col-span-5">
+                  <label className="block min-w-0 md:col-span-2">
+                    <span className="text-sm font-medium text-zinc-800">
+                      품목구분
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
+                    </span>
+                    <select
+                      name="qiProductCategory"
+                      required
+                      defaultValue={qiVals.qiProductCategory ?? ""}
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-2.5 py-2 outline-none focus:border-zinc-400"
+                    >
+                      <option value="" disabled>
+                        선택
+                      </option>
+                      {PRODUCT_CATEGORY_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
                       의뢰품명/사양
                       <span className="text-red-600" aria-hidden="true">
@@ -1386,7 +1436,7 @@ export default function NewFormClient({
                       defaultValue={
                         abVals.abReportDate || todayDateInputValue
                       }
-                      className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
+                      className="mt-1 w-full max-w-[9.5rem] rounded-xl border border-zinc-200 px-2.5 py-2 outline-none focus:border-zinc-400"
                     />
                   </label>
                   <label className="block min-w-0 md:col-span-2">
@@ -1407,7 +1457,31 @@ export default function NewFormClient({
                       autoComplete="name"
                     />
                   </label>
-                  <label className="block min-w-0 md:col-span-5">
+                  <label className="block min-w-0 md:col-span-2">
+                    <span className="text-sm font-medium text-zinc-800">
+                      품목구분
+                      <span className="text-red-600" aria-hidden="true">
+                        {" "}
+                        *
+                      </span>
+                    </span>
+                    <select
+                      name="abProductCategory"
+                      required
+                      defaultValue={abVals.abProductCategory ?? ""}
+                      className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-2.5 py-2 outline-none focus:border-zinc-400"
+                    >
+                      <option value="" disabled>
+                        선택
+                      </option>
+                      {PRODUCT_CATEGORY_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block min-w-0 md:col-span-3">
                     <span className="text-sm font-medium text-zinc-800">
                       {isWorkCoop ? "요청품목/사양" : "이상발생품명/사양"}
                       <span className="text-red-600" aria-hidden="true">

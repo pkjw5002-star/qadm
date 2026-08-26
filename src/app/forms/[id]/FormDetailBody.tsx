@@ -108,6 +108,7 @@ export async function FormDetailBody({ id }: { id: string }) {
         date?: unknown;
         writerName?: unknown;
         itemSpec?: unknown;
+        productCategory?: unknown;
         requestReasonDetails?: unknown;
         reviewDepartmentOwner?: unknown;
         photoAttachment?: { uploadedUrl?: string; externalUrl?: string };
@@ -126,6 +127,7 @@ export async function FormDetailBody({ id }: { id: string }) {
         date?: unknown;
         writerName?: unknown;
         itemSpec?: unknown;
+        productCategory?: unknown;
         problemAndRequest?: unknown;
         handlingDepartmentOwner?: unknown;
         photoAttachment?: { uploadedUrl?: string; externalUrl?: string };
@@ -144,6 +146,7 @@ export async function FormDetailBody({ id }: { id: string }) {
         date?: unknown;
         writerName?: unknown;
         itemSpec?: unknown;
+        productCategory?: unknown;
         problemAndRequest?: unknown;
         handlingDepartmentOwner?: unknown;
         photoAttachment?: { uploadedUrl?: string; externalUrl?: string };
@@ -178,6 +181,7 @@ export async function FormDetailBody({ id }: { id: string }) {
       formNo?: unknown;
       receipt?: {
         date?: unknown;
+        productCategory?: unknown;
         complaintProductName?: unknown;
         departmentAndOwner?: unknown;
         customerInfo?: unknown;
@@ -398,6 +402,12 @@ export async function FormDetailBody({ id }: { id: string }) {
                         value: formatKoreanDateCompact(receipt.date),
                       },
                       {
+                        label: "품목구분",
+                        value: receipt.productCategory
+                          ? String(receipt.productCategory)
+                          : "—",
+                      },
+                      {
                         label: "불만신고 제품명",
                         value: receipt.complaintProductName
                           ? String(receipt.complaintProductName)
@@ -473,13 +483,22 @@ export async function FormDetailBody({ id }: { id: string }) {
                           flex: "flex-[0.9]",
                         },
                         {
+                          label: "품목구분",
+                          value:
+                            qi.receipt.productCategory != null &&
+                            String(qi.receipt.productCategory).trim() !== ""
+                              ? String(qi.receipt.productCategory)
+                              : "—",
+                          flex: "flex-[0.9]",
+                        },
+                        {
                           label: "의뢰품명/사양",
                           value:
                             qi.receipt.itemSpec != null &&
                             String(qi.receipt.itemSpec).trim() !== ""
                               ? String(qi.receipt.itemSpec)
                               : "—",
-                          flex: "flex-[1.7]",
+                          flex: "flex-[1.5]",
                         },
                         {
                           label: "검토부서/담당자",
@@ -488,7 +507,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                             String(qi.receipt.reviewDepartmentOwner).trim() !== ""
                               ? String(qi.receipt.reviewDepartmentOwner)
                               : "—",
-                          flex: "flex-[1.2]",
+                          flex: "flex-[1.1]",
                         },
                       ]}
                     />
@@ -737,6 +756,15 @@ export async function FormDetailBody({ id }: { id: string }) {
                           flex: "flex-[0.9]",
                         },
                         {
+                          label: "품목구분",
+                          value:
+                            abLike.report.productCategory != null &&
+                            String(abLike.report.productCategory).trim() !== ""
+                              ? String(abLike.report.productCategory)
+                              : "—",
+                          flex: "flex-[0.9]",
+                        },
+                        {
                           label: isWorkCoopDetail
                             ? "요청품목/사양"
                             : "이상발생품명/사양",
@@ -745,7 +773,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                             String(abLike.report.itemSpec).trim() !== ""
                               ? String(abLike.report.itemSpec)
                               : "—",
-                          flex: "flex-[1.7]",
+                          flex: "flex-[1.5]",
                         },
                         {
                           label: isWorkCoopDetail
@@ -756,7 +784,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                             String(abLike.report.handlingDepartmentOwner).trim() !== ""
                               ? String(abLike.report.handlingDepartmentOwner)
                               : "—",
-                          flex: "flex-[1.2]",
+                          flex: "flex-[1.1]",
                         },
                       ]}
                     />

@@ -1,7 +1,8 @@
 import type { FormType } from "@/generated/prisma/client";
 import type { FormListRow } from "@/app/forms/formListTableTypes";
+import { formatProductWithCategory } from "@/lib/productCategory";
 
-export const LIST_SNAPSHOT_VERSION = 2;
+export const LIST_SNAPSHOT_VERSION = 3;
 
 export type StoredListSnapshot =
   | {
@@ -58,6 +59,7 @@ function complaintListRow(data: unknown, title: string) {
       formNo?: unknown;
       receipt?: {
         date?: unknown;
+        productCategory?: unknown;
         complaintProductName?: unknown;
         departmentAndOwner?: unknown;
         customerInfo?: unknown;
@@ -110,7 +112,10 @@ function complaintListRow(data: unknown, title: string) {
     no: formNo,
     receiptDate: r?.date,
     customerInfo: textOrDash(r?.customerInfo),
-    productName: r?.complaintProductName,
+    productName: formatProductWithCategory(
+      r?.productCategory,
+      r?.complaintProductName
+    ),
     departmentAndOwner: r?.departmentAndOwner,
     content,
     actionContent,
@@ -170,6 +175,7 @@ type AbLikeJson = {
   report?: {
     date?: unknown;
     itemSpec?: unknown;
+    productCategory?: unknown;
     problemAndRequest?: unknown;
     handlingDepartmentOwner?: unknown;
   };
@@ -204,7 +210,7 @@ function abLikeListRow(
   return {
     no: formNo,
     reportDate: r?.date,
-    itemSpec: textOrDash(r?.itemSpec),
+    itemSpec: formatProductWithCategory(r?.productCategory, r?.itemSpec),
     problemAndRequest: textOrDash(r?.problemAndRequest),
     handlingDeptOwner: textOrDash(r?.handlingDepartmentOwner),
     handlingDate: h?.date,
@@ -260,6 +266,7 @@ function qualityImprovementListRow(data: unknown, title: string) {
       formNo?: unknown;
       receipt?: {
         itemSpec?: unknown;
+        productCategory?: unknown;
         requestReasonDetails?: unknown;
         reviewDepartmentOwner?: unknown;
       };
@@ -282,7 +289,7 @@ function qualityImprovementListRow(data: unknown, title: string) {
 
   return {
     no: formNo,
-    itemSpec: textOrDash(r?.itemSpec),
+    itemSpec: formatProductWithCategory(r?.productCategory, r?.itemSpec),
     requestReason: textOrDash(r?.requestReasonDetails),
     reviewDeptOwner: textOrDash(r?.reviewDepartmentOwner),
     reviewDate: v?.date,

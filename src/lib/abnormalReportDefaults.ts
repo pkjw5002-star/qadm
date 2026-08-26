@@ -1,10 +1,13 @@
 import type { PhotoRef } from "@/lib/photoRef";
 import { photoRefToUrlFieldValue } from "@/lib/photoRef";
+import type { ProductCategory } from "@/lib/productCategory";
+import { isProductCategory } from "@/lib/productCategory";
 
 /** 이상발생신고서 수정 폼의 `defaultValue`용 플랫 필드 */
 export type AbnormalReportDefaults = Partial<{
   abReportDate: string;
   abWriterName: string;
+  abProductCategory: ProductCategory | "";
   abItemSpec: string;
   abProblemAndRequest: string;
   abHandlingDepartmentOwner: string;
@@ -59,6 +62,9 @@ export function abnormalReportJsonToDefaults(data: unknown): AbnormalReportDefau
   return {
     abReportDate: dateInput(r?.date),
     abWriterName: r?.writerName != null ? String(r.writerName) : "",
+    abProductCategory: isProductCategory(r?.productCategory)
+      ? r.productCategory
+      : "",
     abItemSpec: r?.itemSpec != null ? String(r.itemSpec) : "",
     abProblemAndRequest:
       r?.problemAndRequest != null ? String(r.problemAndRequest) : "",

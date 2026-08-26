@@ -1,9 +1,12 @@
 import type { PhotoRef } from "@/lib/photoRef";
 import { photoRefToUrlFieldValue } from "@/lib/photoRef";
+import type { ProductCategory } from "@/lib/productCategory";
+import { isProductCategory } from "@/lib/productCategory";
 
 /** 불만신고서 수정 폼의 `defaultValue`용 플랫 필드 */
 export type ComplaintFormDefaults = Partial<{
   receiptDate: string;
+  productCategory: ProductCategory | "";
   complaintProductName: string;
   departmentOwnerOptionId: string;
   customerInfo: string;
@@ -95,6 +98,9 @@ export function complaintJsonToFormDefaults(data: unknown): ComplaintFormDefault
 
   return {
     receiptDate: dateInput(r?.date),
+    productCategory: isProductCategory(r?.productCategory)
+      ? r.productCategory
+      : "",
     complaintProductName: r?.complaintProductName != null ? String(r.complaintProductName) : "",
     departmentOwnerOptionId:
       r?.departmentOwnerOptionId != null

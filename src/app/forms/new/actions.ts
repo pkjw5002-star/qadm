@@ -23,7 +23,9 @@ import {
 import { urlsToPhotoRef } from "@/lib/photoRef";
 import { buildListSnapshot } from "@/lib/formListSnapshot";
 import type { FormType } from "@/generated/prisma/client";
+import { PRODUCT_CATEGORY_OPTIONS } from "@/lib/productCategory";
 
+const productCategorySchema = z.enum(PRODUCT_CATEGORY_OPTIONS);
 function revalidateAfterFormChange(formId: string) {
   revalidatePath("/forms");
   revalidatePath(`/forms/${formId}`);
@@ -53,6 +55,7 @@ const FORM_FIELD_LABEL_KO: Record<string, string> = {
   type: "서식 종류 선택",
   title: "제목",
   receiptDate: "접수 일자",
+  productCategory: "품목구분",
   complaintProductName: "불만신고 제품명",
   departmentOwnerOptionId: "해당부서 및 담당자",
   customerInfo: "고객정보",
@@ -62,6 +65,7 @@ const FORM_FIELD_LABEL_KO: Record<string, string> = {
   recoveryProcessingDetail: "회수품처리 처리 상세내용",
   qiReceiptDate: "접수 일자",
   qiWriterName: "작성자",
+  qiProductCategory: "품목구분",
   qiItemSpec: "의뢰품명/사양",
   qiRequestReasonDetails: "의뢰사유 및 세부 의뢰내용",
   qiReviewDepartmentOwner: "검토부서/담당자",
@@ -70,6 +74,7 @@ const FORM_FIELD_LABEL_KO: Record<string, string> = {
   qiConfirmContent: "확인내용",
   abReportDate: "신고(요청) 일자",
   abWriterName: "작성자",
+  abProductCategory: "품목구분",
   abItemSpec: "품목/사양",
   abProblemAndRequest: "문제점 및 이상현상·협조요청 내용",
   abHandlingDepartmentOwner: "처리(수신)부서/담당자",
@@ -170,6 +175,7 @@ const ComplaintReceiptSchema = z.object({
   type: z.literal("COMPLAINT"),
   /** 1. 접수 — 필수 */
   receiptDate: z.string().min(1),
+  productCategory: productCategorySchema,
   complaintProductName: z.string().min(1),
   departmentOwnerOptionId: z.string().min(1),
   customerInfo: z.string().min(1),
@@ -222,6 +228,7 @@ const QualityImprovementSchema = z
     /** 1. 접수 — 필수 */
     qiReceiptDate: z.string().min(1),
     qiWriterName: z.string().min(1),
+    qiProductCategory: productCategorySchema,
     qiItemSpec: z.string().min(1),
     qiRequestReasonDetails: z.string().min(1),
     qiReviewDepartmentOwner: z.string().min(1),
@@ -368,6 +375,7 @@ const AbnormalReportSchema = z
     /** 1. 이상발생신고 — 필수 */
     abReportDate: z.string().min(1),
     abWriterName: z.string().min(1),
+    abProductCategory: productCategorySchema,
     abItemSpec: z.string().min(1),
     abProblemAndRequest: z.string().min(1),
     abHandlingDepartmentOwner: z.string().min(1),
@@ -419,6 +427,7 @@ const WorkCoopSchema = z
     /** 1. 업무협조 — 필수 (필드명은 이상발생신고서와 동일) */
     abReportDate: z.string().min(1),
     abWriterName: z.string().min(1),
+    abProductCategory: productCategorySchema,
     abItemSpec: z.string().min(1),
     abProblemAndRequest: z.string().min(1),
     abHandlingDepartmentOwner: z.string().min(1),
@@ -669,6 +678,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
 
     // COMPLAINT - 접수 탭
     receiptDate: String(formData.get("receiptDate") ?? ""),
+    productCategory: String(formData.get("productCategory") ?? ""),
     complaintProductName: String(formData.get("complaintProductName") ?? ""),
     departmentOwnerOptionId: String(formData.get("departmentOwnerOptionId") ?? ""),
     customerInfo: String(formData.get("customerInfo") ?? ""),
@@ -711,6 +721,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     // QUALITY_IMPROVEMENT
     qiReceiptDate: String(formData.get("qiReceiptDate") ?? ""),
     qiWriterName: String(formData.get("qiWriterName") ?? ""),
+    qiProductCategory: String(formData.get("qiProductCategory") ?? ""),
     qiItemSpec: String(formData.get("qiItemSpec") ?? ""),
     qiRequestReasonDetails: String(formData.get("qiRequestReasonDetails") ?? ""),
     qiReviewDepartmentOwner: String(formData.get("qiReviewDepartmentOwner") ?? ""),
@@ -723,6 +734,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
     // ABNORMAL_REPORT
     abReportDate: String(formData.get("abReportDate") ?? ""),
     abWriterName: String(formData.get("abWriterName") ?? ""),
+    abProductCategory: String(formData.get("abProductCategory") ?? ""),
     abItemSpec: String(formData.get("abItemSpec") ?? ""),
     abProblemAndRequest: String(formData.get("abProblemAndRequest") ?? ""),
     abHandlingDepartmentOwner: String(formData.get("abHandlingDepartmentOwner") ?? ""),
@@ -834,6 +846,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
         receipt: {
           date: d.qiReceiptDate,
           writerName: d.qiWriterName,
+          productCategory: d.qiProductCategory,
           itemSpec: d.qiItemSpec,
           requestReasonDetails: d.qiRequestReasonDetails,
           reviewDepartmentOwner: d.qiReviewDepartmentOwner,
@@ -900,6 +913,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
         report: {
           date: d.abReportDate,
           writerName: d.abWriterName,
+          productCategory: d.abProductCategory,
           itemSpec: d.abItemSpec,
           problemAndRequest: d.abProblemAndRequest,
           handlingDepartmentOwner: d.abHandlingDepartmentOwner,
@@ -960,6 +974,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
         report: {
           date: d.abReportDate,
           writerName: d.abWriterName,
+          productCategory: d.abProductCategory,
           itemSpec: d.abItemSpec,
           problemAndRequest: d.abProblemAndRequest,
           handlingDepartmentOwner: d.abHandlingDepartmentOwner,
@@ -1093,6 +1108,7 @@ function complaintFieldsFromFormData(formData: FormData) {
   return {
     type: "COMPLAINT" as const,
     receiptDate: String(formData.get("receiptDate") ?? ""),
+    productCategory: String(formData.get("productCategory") ?? ""),
     complaintProductName: String(formData.get("complaintProductName") ?? ""),
     departmentOwnerOptionId: String(
       formData.get("departmentOwnerOptionId") ?? ""
@@ -1261,6 +1277,7 @@ export async function updateQualityImprovementFormAction(
     title: String(formData.get("title") ?? "") || undefined,
     qiReceiptDate: String(formData.get("qiReceiptDate") ?? ""),
     qiWriterName: String(formData.get("qiWriterName") ?? ""),
+    qiProductCategory: String(formData.get("qiProductCategory") ?? ""),
     qiItemSpec: String(formData.get("qiItemSpec") ?? ""),
     qiRequestReasonDetails: String(formData.get("qiRequestReasonDetails") ?? ""),
     qiReviewDepartmentOwner: String(formData.get("qiReviewDepartmentOwner") ?? ""),
@@ -1316,6 +1333,7 @@ export async function updateQualityImprovementFormAction(
       receipt: {
         date: d.qiReceiptDate,
         writerName: d.qiWriterName,
+        productCategory: d.qiProductCategory,
         itemSpec: d.qiItemSpec,
         requestReasonDetails: d.qiRequestReasonDetails,
         reviewDepartmentOwner: d.qiReviewDepartmentOwner,
@@ -1390,6 +1408,7 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
     title: String(formData.get("title") ?? "") || undefined,
     abReportDate: String(formData.get("abReportDate") ?? ""),
     abWriterName: String(formData.get("abWriterName") ?? ""),
+    abProductCategory: String(formData.get("abProductCategory") ?? ""),
     abItemSpec: String(formData.get("abItemSpec") ?? ""),
     abProblemAndRequest: String(formData.get("abProblemAndRequest") ?? ""),
     abHandlingDepartmentOwner: String(formData.get("abHandlingDepartmentOwner") ?? ""),
@@ -1439,6 +1458,7 @@ export async function updateAbnormalReportFormAction(_: unknown, formData: FormD
       report: {
         date: d.abReportDate,
         writerName: d.abWriterName,
+        productCategory: d.abProductCategory,
         itemSpec: d.abItemSpec,
         problemAndRequest: d.abProblemAndRequest,
         handlingDepartmentOwner: d.abHandlingDepartmentOwner,
@@ -1506,6 +1526,7 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
     title: String(formData.get("title") ?? "") || undefined,
     abReportDate: String(formData.get("abReportDate") ?? ""),
     abWriterName: String(formData.get("abWriterName") ?? ""),
+    abProductCategory: String(formData.get("abProductCategory") ?? ""),
     abItemSpec: String(formData.get("abItemSpec") ?? ""),
     abProblemAndRequest: String(formData.get("abProblemAndRequest") ?? ""),
     abHandlingDepartmentOwner: String(
@@ -1559,6 +1580,7 @@ export async function updateWorkCoopFormAction(_: unknown, formData: FormData) {
       report: {
         date: d.abReportDate,
         writerName: d.abWriterName,
+        productCategory: d.abProductCategory,
         itemSpec: d.abItemSpec,
         problemAndRequest: d.abProblemAndRequest,
         handlingDepartmentOwner: d.abHandlingDepartmentOwner,
