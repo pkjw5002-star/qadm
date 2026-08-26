@@ -1,64 +1,64 @@
 import type { FormListColumn } from "./formListTableTypes";
 
-export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v2";
+export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v3";
 
 export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
-  { id: "no", label: "NO", defaultWidth: 56, minWidth: 40, variant: "no" },
+  { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
   {
     id: "receiptDate",
     label: "접수일",
-    defaultWidth: 80,
-    minWidth: 64,
+    defaultWidth: 104,
+    minWidth: 80,
     variant: "date",
   },
   {
     id: "customerInfo",
     label: "고객정보",
-    defaultWidth: 120,
-    minWidth: 64,
+    defaultWidth: 180,
+    minWidth: 96,
     variant: "text",
   },
   {
     id: "productName",
     label: "제품명",
-    defaultWidth: 100,
-    minWidth: 56,
+    defaultWidth: 140,
+    minWidth: 80,
     variant: "text",
   },
   {
     id: "departmentOwner",
     label: "부서_담당자",
-    defaultWidth: 168,
-    minWidth: 96,
+    defaultWidth: 200,
+    minWidth: 120,
     variant: "text",
   },
-  { id: "content", label: "내용", defaultWidth: 160, minWidth: 80, variant: "text" },
+  { id: "content", label: "내용", defaultWidth: 220, minWidth: 120, variant: "text" },
   {
     id: "actionContent",
     label: "조치내용",
-    defaultWidth: 160,
-    minWidth: 80,
+    defaultWidth: 220,
+    minWidth: 120,
     variant: "text",
   },
   {
     id: "outsideAs",
     label: "사외AS",
-    defaultWidth: 72,
-    minWidth: 56,
+    defaultWidth: 88,
+    minWidth: 64,
     variant: "compact",
   },
   {
     id: "causeAnalysis",
     label: "원인분석",
-    defaultWidth: 72,
-    minWidth: 56,
+    defaultWidth: 88,
+    minWidth: 64,
     variant: "compact",
   },
   {
     id: "comment",
     label: "댓글",
-    defaultWidth: 176,
-    minWidth: 100,
+    defaultWidth: 200,
+    minWidth: 120,
     variant: "comment",
   },
 ];
