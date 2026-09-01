@@ -49,14 +49,16 @@ export default async function AdminUsersPage({
           등록된 사용자 ({users.length}명)
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] border-collapse text-sm">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs font-medium text-zinc-600">
-                <th className="px-4 py-2">이름</th>
+                <th className="min-w-[140px] whitespace-nowrap px-4 py-2">이름</th>
                 <th className="px-4 py-2" colSpan={2}>
                   수정 (이름·권한·비밀번호)
                 </th>
-                <th className="hidden px-4 py-2 sm:table-cell">등록일</th>
+                <th className="hidden min-w-[120px] whitespace-nowrap px-4 py-2 sm:table-cell">
+                  등록일
+                </th>
               </tr>
             </thead>
             <tbody>
