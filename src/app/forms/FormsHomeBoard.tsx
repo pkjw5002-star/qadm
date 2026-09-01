@@ -8,14 +8,16 @@ import { loadFormReadIds } from "@/lib/formReadStore";
 
 type SearchFilters = {
   formType: "" | FormTypeKey;
-  date: string;
+  dateFrom: string;
+  dateTo: string;
   author: string;
   content: string;
 };
 
 const EMPTY_FILTERS: SearchFilters = {
   formType: "",
-  date: "",
+  dateFrom: "",
+  dateTo: "",
   author: "",
   content: "",
 };
@@ -61,14 +63,18 @@ export default function FormsHomeBoard({
 
   const filtered = useMemo(() => {
     const typeQ = filters.formType;
-    const dateQ = filters.date.trim();
+    const fromQ = filters.dateFrom.trim();
+    const toQ = filters.dateTo.trim();
     const authorQ = filters.author.trim().toLowerCase();
     const contentQ = filters.content.trim().toLowerCase();
 
     return rows.filter((row) => {
       if (typeQ && row.formType !== typeQ) return false;
-      if (dateQ && !row.docDateRaw.includes(dateQ) && !row.docDate.includes(dateQ)) {
-        return false;
+      if (fromQ || toQ) {
+        const raw = row.docDateRaw;
+        if (!raw) return false;
+        if (fromQ && raw < fromQ) return false;
+        if (toQ && raw > toQ) return false;
       }
       if (authorQ && !row.author.toLowerCase().includes(authorQ)) return false;
       if (contentQ) {
@@ -85,7 +91,7 @@ export default function FormsHomeBoard({
     <div className="space-y-6">
       <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-zinc-900">검색항목</h2>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
           <label className="block min-w-0">
             <span className="text-xs font-medium text-zinc-600">서류종류</span>
             <select
@@ -106,16 +112,29 @@ export default function FormsHomeBoard({
               ))}
             </select>
           </label>
-          <label className="block min-w-0">
+          <label className="block min-w-0 sm:col-span-2 lg:col-span-2">
             <span className="text-xs font-medium text-zinc-600">일자</span>
-            <input
-              type="date"
-              value={filters.date}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, date: e.target.value }))
-              }
-              className="mt-1 w-full max-w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
-            />
+            <div className="mt-1 flex min-w-0 items-center gap-2">
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, dateFrom: e.target.value }))
+                }
+                aria-label="시작일"
+                className="min-w-0 flex-1 rounded-xl border border-zinc-200 px-2 py-2 text-sm outline-none focus:border-zinc-400"
+              />
+              <span className="shrink-0 text-xs text-zinc-500">~</span>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, dateTo: e.target.value }))
+                }
+                aria-label="종료일"
+                className="min-w-0 flex-1 rounded-xl border border-zinc-200 px-2 py-2 text-sm outline-none focus:border-zinc-400"
+              />
+            </div>
           </label>
           <label className="block min-w-0">
             <span className="text-xs font-medium text-zinc-600">발행자</span>
@@ -162,10 +181,10 @@ export default function FormsHomeBoard({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[960px] w-full border-separate border-spacing-0 text-sm">
+          <table className="min-w-[1000px] w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                <th className="whitespace-nowrap px-3 py-2.5">NO</th>
+                <th className="min-w-[110px] whitespace-nowrap px-3 py-2.5">NO</th>
                 <th className="whitespace-nowrap px-3 py-2.5">일자</th>
                 <th className="whitespace-nowrap px-3 py-2.5">서류종류</th>
                 <th className="min-w-[120px] px-3 py-2.5">제품명</th>
@@ -201,7 +220,7 @@ export default function FormsHomeBoard({
                       key={row.id}
                       className="border-t border-zinc-100 hover:bg-zinc-50/80"
                     >
-                      <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                      <td className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}>
                         <Link
                           href={`/forms/${row.id}`}
                           prefetch
