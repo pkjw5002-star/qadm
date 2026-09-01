@@ -6,8 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, requireAdmin } from "@/lib/auth";
 
 const CreateUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1).max(80),
+  name: z.string().trim().min(1).max(80),
   password: z.string().min(8).max(200),
   role: z.enum(["USER", "ADMIN"]),
 });
@@ -16,7 +15,6 @@ export async function createUserAction(_: unknown, formData: FormData) {
   await requireAdmin();
 
   const parsed = CreateUserSchema.safeParse({
-    email: String(formData.get("email") ?? "").trim().toLowerCase(),
     name: String(formData.get("name") ?? "").trim(),
     password: String(formData.get("password") ?? ""),
     role:
@@ -25,22 +23,20 @@ export async function createUserAction(_: unknown, formData: FormData) {
   if (!parsed.success) {
     return {
       ok: false as const,
-      message:
-        "입력값을 확인해 주세요. (이메일 형식, 이름, 비밀번호 8자 이상)",
+      message: "입력값을 확인해 주세요. (이름, 비밀번호 8자 이상)",
     };
   }
 
   const exists = await prisma.user.findUnique({
-    where: { email: parsed.data.email },
+    where: { name: parsed.data.name },
     select: { id: true },
   });
   if (exists) {
-    return { ok: false as const, message: "이미 같은 이메일이 등록되어 있어요." };
+    return { ok: false as const, message: "이미 같은 이름이 등록되어 있어요." };
   }
 
   await prisma.user.create({
     data: {
-      email: parsed.data.email,
       name: parsed.data.name,
       passwordHash: await hashPassword(parsed.data.password),
       role: parsed.data.role,
@@ -53,7 +49,7 @@ export async function createUserAction(_: unknown, formData: FormData) {
 const UpdateUserSchema = z
   .object({
     userId: z.string().min(1),
-    name: z.string().min(1).max(80),
+    name: z.string().trim().min(1).max(80),
     role: z.enum(["USER", "ADMIN"]),
     newPassword: z.string().optional(),
   })
@@ -89,6 +85,14 @@ export async function updateUserAction(_: unknown, formData: FormData) {
   });
   if (!target) {
     return { ok: false as const, message: "사용자를 찾을 수 없습니다." };
+  }
+
+  const nameTaken = await prisma.user.findFirst({
+    where: { name: parsed.data.name, id: { not: parsed.data.userId } },
+    select: { id: true },
+  });
+  if (nameTaken) {
+    return { ok: false as const, message: "이미 같은 이름이 등록되어 있어요." };
   }
 
   if (me.id === parsed.data.userId && parsed.data.role === "USER") {

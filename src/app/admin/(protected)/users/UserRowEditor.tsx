@@ -5,7 +5,6 @@ import { updateUserAction } from "@/app/admin/(protected)/users/actions";
 
 export type UserRowEditorVm = {
   id: string;
-  email: string;
   name: string;
   role: "USER" | "ADMIN";
   createdLabel: string;
@@ -22,7 +21,7 @@ export default function UserRowEditor({ user }: { user: UserRowEditorVm }) {
   return (
     <>
       <tr className="border-b border-zinc-100">
-        <td className="px-4 py-2.5 align-top text-sm text-zinc-900">{user.email}</td>
+        <td className="px-4 py-2.5 align-top text-sm font-medium text-zinc-900">{user.name}</td>
         <td className="px-4 py-2 align-top" colSpan={2}>
           <form action={action} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
             <input type="hidden" name="userId" value={user.id} />

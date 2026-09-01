@@ -6,8 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 
 const SetupSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1),
+  name: z.string().trim().min(1).max(80),
   password: z.string().min(8),
 });
 
@@ -16,8 +15,7 @@ export async function setupAdminAction(_: unknown, formData: FormData) {
   if (exists) return { ok: false as const, message: "이미 초기 설정이 완료됐어요." };
 
   const parsed = SetupSchema.safeParse({
-    email: String(formData.get("email") ?? "").toLowerCase(),
-    name: String(formData.get("name") ?? ""),
+    name: String(formData.get("name") ?? "").trim(),
     password: String(formData.get("password") ?? ""),
   });
   if (!parsed.success) {
@@ -26,7 +24,6 @@ export async function setupAdminAction(_: unknown, formData: FormData) {
 
   await prisma.user.create({
     data: {
-      email: parsed.data.email,
       name: parsed.data.name,
       passwordHash: await hashPassword(parsed.data.password),
       role: "ADMIN",
@@ -35,4 +32,3 @@ export async function setupAdminAction(_: unknown, formData: FormData) {
 
   redirect("/admin/login");
 }
-

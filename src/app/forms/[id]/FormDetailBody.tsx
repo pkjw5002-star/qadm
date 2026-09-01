@@ -91,7 +91,7 @@ export async function FormDetailBody({ id }: { id: string }) {
   const form = await prisma.form.findUnique({
     where: { id },
     include: {
-      createdBy: { select: { name: true, email: true } },
+      createdBy: { select: { name: true } },
     },
   });
   if (!form) notFound();

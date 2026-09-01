@@ -15,7 +15,6 @@ export default async function AdminUsersPage({
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
-      email: true,
       name: true,
       role: true,
       createdAt: true,
@@ -27,8 +26,8 @@ export default async function AdminUsersPage({
       <div>
         <h1 className="text-lg font-semibold tracking-tight">사용자</h1>
         <p className="mt-1 text-sm text-zinc-600">
-          직원 계정을 등록하고, 이름·권한·비밀번호를 수정할 수 있습니다. 이메일은
-          변경할 수 없습니다.
+          직원 계정을 등록하고, 이름·권한·비밀번호를 수정할 수 있습니다. 로그인
+          ID는 이름입니다.
         </p>
       </div>
 
@@ -53,7 +52,7 @@ export default async function AdminUsersPage({
           <table className="w-full min-w-[520px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs font-medium text-zinc-600">
-                <th className="px-4 py-2">이메일</th>
+                <th className="px-4 py-2">이름</th>
                 <th className="px-4 py-2" colSpan={2}>
                   수정 (이름·권한·비밀번호)
                 </th>
@@ -66,7 +65,6 @@ export default async function AdminUsersPage({
                   key={u.id}
                   user={{
                     id: u.id,
-                    email: u.email,
                     name: u.name,
                     role: u.role,
                     createdLabel: u.createdAt.toLocaleDateString("ko-KR"),

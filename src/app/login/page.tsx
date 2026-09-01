@@ -27,14 +27,14 @@ export default function LoginPage() {
 
         <form action={action} className="space-y-4">
           <label className="block">
-            <span className="text-sm font-medium text-zinc-800">이메일</span>
+            <span className="text-sm font-medium text-zinc-800">이름</span>
             <input
-              name="email"
-              type="email"
-              autoComplete="email"
+              name="name"
+              type="text"
+              autoComplete="username"
               required
               className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-              placeholder="name@company.com"
+              placeholder="홍길동"
             />
           </label>
 

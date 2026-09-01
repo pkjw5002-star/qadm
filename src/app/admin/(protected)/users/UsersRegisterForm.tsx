@@ -15,17 +15,6 @@ export default function UsersRegisterForm() {
     <form action={action} className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4">
       <h2 className="text-sm font-semibold text-zinc-900">사용자 등록</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-zinc-800">이메일</span>
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="off"
-            className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-            placeholder="user@company.com"
-          />
-        </label>
         <label className="block">
           <span className="text-sm font-medium text-zinc-800">이름</span>
           <input

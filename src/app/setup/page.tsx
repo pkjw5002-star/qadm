@@ -32,16 +32,6 @@ export default function SetupPage() {
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-zinc-800">이메일</span>
-            <input
-              name="email"
-              type="email"
-              required
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 outline-none focus:border-zinc-400"
-              placeholder="admin@company.com"
-            />
-          </label>
-          <label className="block">
             <span className="text-sm font-medium text-zinc-800">비밀번호</span>
             <input
               name="password"
