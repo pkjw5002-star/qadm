@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import type { FormTypeKey } from "@/lib/formTypes";
-import { FORM_TYPE_LABEL, isFormTypeKey } from "@/lib/formTypes";
 import ComplaintFormsTable from "@/app/forms/ComplaintFormsTable";
 import ReviewProcessFilterFormsTable from "@/app/forms/ReviewProcessFilterFormsTable";
+import FormsHomeBoard from "@/app/forms/FormsHomeBoard";
+import { buildRecentBoardRow } from "@/lib/formRecentBoard";
 import {
   QUALITY_IMPROVEMENT_LIST_COLUMNS,
   QUALITY_IMPROVEMENT_LIST_STORAGE_KEY,
@@ -23,20 +24,31 @@ import {
   reviewFilterRowFromSnapshot,
 } from "@/lib/formListSnapshot";
 
-const statusLabel: Record<string, string> = {
-  DRAFT: "작성중",
-  SUBMITTED: "제출",
-  IN_REVIEW: "검토중",
-  APPROVED: "승인",
-  REJECTED: "반려",
-  CLOSED: "종료",
-};
+const formListSelect = {
+  id: true,
+  type: true,
+  title: true,
+  createdAt: true,
+  commentCount: true,
+  createdBy: { select: { name: true } },
+  events: {
+    where: { action: "COMMENT" },
+    orderBy: { createdAt: "desc" as const },
+    take: 1,
+    select: {
+      payload: true,
+      createdAt: true,
+      actor: { select: { name: true } },
+    },
+  },
+} as const;
 
 export default async function FormsListContent({
   type,
 }: {
   type?: FormTypeKey;
 }) {
+  const user = await requireUser();
   const isComplaintList = type === "COMPLAINT";
   const isQualityImprovementList = type === "QUALITY_IMPROVEMENT";
   const isAbnormalList = type === "ABNORMAL_REPORT";
@@ -49,34 +61,44 @@ export default async function FormsListContent({
     isWorkCoopList ||
     isSuggestionList;
 
+  if (!isTypedList) {
+    const forms = await prisma.form.findMany({
+      where: undefined,
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        ...formListSelect,
+        data: true,
+      },
+    });
+
+    const homeRows = forms.flatMap((f) => {
+      const row = buildRecentBoardRow({
+        id: f.id,
+        type: f.type,
+        title: f.title,
+        data: f.data,
+        authorName: f.createdBy.name,
+        createdAt: f.createdAt,
+      });
+      return row ? [row] : [];
+    });
+
+    return <FormsHomeBoard rows={homeRows} userId={user.id} />;
+  }
+
   const forms = await prisma.form.findMany({
-    where: type ? { type } : undefined,
+    where: { type },
     orderBy: { createdAt: "desc" },
     take: 50,
     select: {
-      id: true,
-      type: true,
-      status: true,
-      title: true,
-      createdAt: true,
-      commentCount: true,
-      createdBy: { select: { name: true } },
-      ...(isTypedList ? { listSnapshot: true } : {}),
-      events: {
-        where: { action: "COMMENT" },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          payload: true,
-          createdAt: true,
-          actor: { select: { name: true } },
-        },
-      },
+      ...formListSelect,
+      listSnapshot: true,
     },
   });
 
   const dataByFormId = new Map<string, unknown>();
-  if (isTypedList && forms.length > 0) {
+  if (forms.length > 0) {
     const missingIds = forms
       .filter((f) => !isStoredListSnapshotValid(f.type, f.listSnapshot))
       .map((f) => f.id);
@@ -93,7 +115,6 @@ export default async function FormsListContent({
 
   const complaintRows: FormListRow[] = isComplaintList
     ? forms.flatMap((f) => {
-        if (!isTypedList) return [];
         const snap = resolveListSnapshot({
           type: f.type,
           data: dataByFormId.get(f.id),
@@ -115,7 +136,6 @@ export default async function FormsListContent({
 
   const mapReviewRows = () =>
     forms.flatMap((f) => {
-      if (!isTypedList) return [];
       const snap = resolveListSnapshot({
         type: f.type,
         data: dataByFormId.get(f.id),
@@ -147,26 +167,13 @@ export default async function FormsListContent({
         ? abnormalRows.length === 0
         : isWorkCoopList
           ? workCoopRows.length === 0
-          : isSuggestionList
-            ? suggestionRows.length === 0
-            : forms.length === 0;
+          : suggestionRows.length === 0;
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white">
-      {!isTypedList ? (
-        <div className="grid grid-cols-12 gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-medium text-zinc-600">
-          <div className="col-span-2">종류</div>
-          <div className="col-span-3">제목</div>
-          <div className="col-span-2">상태</div>
-          <div className="col-span-2">작성자</div>
-          <div className="col-span-2">댓글</div>
-          <div className="col-span-1 text-right">일자</div>
-        </div>
-      ) : null}
-
       {isEmpty ? (
         <div className="px-4 py-10 text-center text-sm text-zinc-600">
-          {isTypedList && forms.length > 0
+          {forms.length > 0
             ? "목록 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요."
             : "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."}
         </div>
@@ -196,7 +203,7 @@ export default async function FormsListContent({
           filterTitle="미처리"
           filterHint="(처리일자 또는 처리예정일자·사유 없음)"
         />
-      ) : isSuggestionList ? (
+      ) : (
         <ReviewProcessFilterFormsTable
           storageKey={SUGGESTION_LIST_STORAGE_KEY}
           columns={SUGGESTION_LIST_COLUMNS}
@@ -204,51 +211,6 @@ export default async function FormsListContent({
           filterTitle="미처리"
           filterHint="(처리(예정)일자 없음)"
         />
-      ) : (
-        <ul className="divide-y divide-zinc-100">
-          {forms.map((f) => {
-            const commentCp = getCommentPreview(f.events[0], f.commentCount);
-            return (
-              <li key={f.id} className="px-4 py-3 hover:bg-zinc-50">
-                <Link
-                  href={`/forms/${f.id}`}
-                  prefetch
-                  className="grid grid-cols-12 gap-2"
-                >
-                  <div className="col-span-2 text-sm text-zinc-800">
-                    {isFormTypeKey(f.type)
-                      ? FORM_TYPE_LABEL[f.type]
-                      : String(f.type)}
-                  </div>
-                  <div className="col-span-3 min-w-0 text-sm font-medium text-zinc-900">
-                    {f.title}
-                  </div>
-                  <div className="col-span-2 text-sm text-zinc-700">
-                    {statusLabel[String(f.status)] ?? String(f.status)}
-                  </div>
-                  <div className="col-span-2 text-sm text-zinc-700">
-                    {f.createdBy.name}
-                  </div>
-                  <div className="col-span-2 min-w-0 text-xs text-zinc-700">
-                    {commentCp ? (
-                      <div
-                        className="line-clamp-2 whitespace-pre-wrap"
-                        title={commentCp.tooltip}
-                      >
-                        {commentCp.line}
-                      </div>
-                    ) : (
-                      <span className="text-zinc-400">—</span>
-                    )}
-                  </div>
-                  <div className="col-span-1 text-right text-xs text-zinc-500">
-                    {new Date(f.createdAt).toLocaleDateString()}
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
       )}
     </div>
   );

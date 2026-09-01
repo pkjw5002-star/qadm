@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { formListHref } from "@/lib/formTypes";
 import DeleteFormForm from "@/app/forms/[id]/DeleteFormForm";
+import MarkFormReadOnMount from "@/app/forms/MarkFormReadOnMount";
 import {
   CommentsPanelSkeleton,
   FormDetailComments,
@@ -1181,6 +1182,7 @@ export async function FormDetailBody({ id }: { id: string }) {
           <FormDetailComments formId={form.id} />
         </Suspense>
       </div>
+      <MarkFormReadOnMount formId={form.id} />
     </div>
   );
 }
