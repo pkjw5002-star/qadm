@@ -1,10 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FORM_TYPES, type FormTypeKey } from "@/lib/formTypes";
 import type { RecentBoardRow } from "@/lib/formRecentBoard";
-import { loadFormReadIds } from "@/lib/formReadStore";
+import {
+  FORM_READ_CHANGED_EVENT,
+  loadFormReadIds,
+  loadFormReadIdsLocal,
+} from "@/lib/formReadStore";
 
 type SearchFilters = {
   formType: "" | FormTypeKey;
@@ -35,31 +40,44 @@ export default function FormsHomeBoard({
   userId: string;
 }) {
   const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [readIds, setReadIds] = useState<Set<string>>(() =>
+    loadFormReadIdsLocal(userId)
+  );
+  const pathname = usePathname();
+
+  const refreshReadIds = useCallback(() => {
+    void loadFormReadIds(userId).then(setReadIds);
+  }, [userId]);
 
   useEffect(() => {
-    let cancelled = false;
+    refreshReadIds();
 
-    const refresh = () => {
-      void loadFormReadIds(userId).then((ids) => {
-        if (!cancelled) setReadIds(ids);
-      });
+    const onReadChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId: string }>).detail;
+      if (detail?.userId !== userId) return;
+      setReadIds(loadFormReadIdsLocal(userId));
     };
 
     const onVisible = () => {
-      if (document.visibilityState === "visible") refresh();
+      if (document.visibilityState === "visible") refreshReadIds();
     };
 
-    refresh();
-    window.addEventListener("focus", refresh);
+    window.addEventListener(FORM_READ_CHANGED_EVENT, onReadChanged);
+    window.addEventListener("focus", refreshReadIds);
+    window.addEventListener("pageshow", refreshReadIds);
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      cancelled = true;
-      window.removeEventListener("focus", refresh);
+      window.removeEventListener(FORM_READ_CHANGED_EVENT, onReadChanged);
+      window.removeEventListener("focus", refreshReadIds);
+      window.removeEventListener("pageshow", refreshReadIds);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [userId]);
+  }, [userId, refreshReadIds]);
+
+  useEffect(() => {
+    if (pathname === "/forms") refreshReadIds();
+  }, [pathname, refreshReadIds]);
 
   const filtered = useMemo(() => {
     const typeQ = filters.formType;
@@ -209,10 +227,10 @@ export default function FormsHomeBoard({
                 filtered.map((row) => {
                   const read = readIds.has(row.id);
                   const rowClass = read
-                    ? "font-normal text-zinc-400"
-                    : "font-semibold text-zinc-900";
+                    ? "font-normal text-zinc-500"
+                    : "font-bold text-zinc-900";
                   const linkClass = read
-                    ? "text-zinc-400 hover:text-zinc-600"
+                    ? "text-zinc-500 hover:text-zinc-700"
                     : "text-zinc-900 hover:text-sky-800";
 
                   return (
