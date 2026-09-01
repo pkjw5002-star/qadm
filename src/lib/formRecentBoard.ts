@@ -1,6 +1,5 @@
 import type { FormType } from "@/generated/prisma/client";
 import { FORM_TYPE_LABEL, type FormTypeKey } from "@/lib/formTypes";
-import { formatProductWithCategory } from "@/lib/productCategory";
 import { formatListDate } from "@/lib/formListSnapshot";
 
 export type RecentBoardRow = {
@@ -129,10 +128,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
-      productName: formatProductWithCategory(
-        r?.productCategory,
-        r?.complaintProductName
-      ),
+      productName: textOrEmpty(r?.complaintProductName) || "—",
       content: content || "—",
       causeAnalysis:
         combinedCause(prod?.defectCauseAnalysis, lab?.causeAnalysis) || "—",
@@ -164,8 +160,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
-      productName:
-        formatProductWithCategory(r?.productCategory, r?.itemSpec) || "—",
+      productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.requestReasonDetails) || "—",
       causeAnalysis: "—",
       handlingContent: textOrEmpty(v?.improvementContent) || "—",
@@ -206,8 +201,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
-      productName:
-        formatProductWithCategory(r?.productCategory, r?.itemSpec) || "—",
+      productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.problemAndRequest) || "—",
       causeAnalysis: "—",
       handlingContent: textOrEmpty(h?.causeAndActionPrevention) || "—",
