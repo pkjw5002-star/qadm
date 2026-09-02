@@ -6,6 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { FORM_TYPES, type FormTypeKey } from "@/lib/formTypes";
 import type { RecentBoardRow } from "@/lib/formRecentBoard";
 import {
+  PRODUCT_CATEGORY_OPTIONS,
+  type ProductCategory,
+} from "@/lib/productCategory";
+import {
   FORM_READ_CHANGED_EVENT,
   loadFormReadIds,
   loadFormReadIdsLocal,
@@ -15,21 +19,54 @@ type SearchFilters = {
   formType: "" | FormTypeKey;
   dateFrom: string;
   dateTo: string;
+  productCategory: "" | ProductCategory;
   author: string;
   content: string;
 };
 
-const EMPTY_FILTERS: SearchFilters = {
-  formType: "",
-  dateFrom: "",
-  dateTo: "",
-  author: "",
-  content: "",
-};
+function toDateInputValue(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function defaultDateRange(): Pick<SearchFilters, "dateFrom" | "dateTo"> {
+  const today = new Date();
+  const from = new Date(today);
+  from.setMonth(from.getMonth() - 6);
+  return {
+    dateFrom: toDateInputValue(from),
+    dateTo: toDateInputValue(today),
+  };
+}
+
+function createDefaultFilters(): SearchFilters {
+  return {
+    formType: "",
+    ...defaultDateRange(),
+    productCategory: "",
+    author: "",
+    content: "",
+  };
+}
 
 function cellText(v: string): string {
   const t = v.trim();
   return t !== "" && t !== "—" ? t : "—";
+}
+
+function effectiveDateRange(filters: SearchFilters): {
+  from: string;
+  to: string;
+} {
+  const fromQ = filters.dateFrom.trim();
+  const toQ = filters.dateTo.trim();
+  if (!fromQ && !toQ) {
+    const defaults = defaultDateRange();
+    return { from: defaults.dateFrom, to: defaults.dateTo };
+  }
+  return { from: fromQ, to: toQ };
 }
 
 export default function FormsHomeBoard({
@@ -39,7 +76,7 @@ export default function FormsHomeBoard({
   rows: RecentBoardRow[];
   userId: string;
 }) {
-  const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<SearchFilters>(createDefaultFilters);
   const [readIds, setReadIds] = useState<Set<string>>(() =>
     loadFormReadIdsLocal(userId)
   );
@@ -79,21 +116,20 @@ export default function FormsHomeBoard({
     if (pathname === "/forms") refreshReadIds();
   }, [pathname, refreshReadIds]);
 
-  const filtered = useMemo(() => {
+  const searchFiltered = useMemo(() => {
     const typeQ = filters.formType;
-    const fromQ = filters.dateFrom.trim();
-    const toQ = filters.dateTo.trim();
+    const { from, to } = effectiveDateRange(filters);
+    const categoryQ = filters.productCategory;
     const authorQ = filters.author.trim().toLowerCase();
     const contentQ = filters.content.trim().toLowerCase();
 
     return rows.filter((row) => {
       if (typeQ && row.formType !== typeQ) return false;
-      if (fromQ || toQ) {
-        const raw = row.docDateRaw;
-        if (!raw) return false;
-        if (fromQ && raw < fromQ) return false;
-        if (toQ && raw > toQ) return false;
-      }
+      const raw = row.docDateRaw;
+      if (!raw) return false;
+      if (from && raw < from) return false;
+      if (to && raw > to) return false;
+      if (categoryQ && row.productCategory !== categoryQ) return false;
       if (authorQ && !row.author.toLowerCase().includes(authorQ)) return false;
       if (contentQ) {
         const hay = `${row.content}\n${row.productName}\n${row.handlingContent}\n${row.causeAnalysis}`.toLowerCase();
@@ -103,13 +139,29 @@ export default function FormsHomeBoard({
     });
   }, [rows, filters]);
 
-  const resetSearch = () => setFilters(EMPTY_FILTERS);
+  const unreadRows = useMemo(
+    () => searchFiltered.filter((row) => !readIds.has(row.id)),
+    [searchFiltered, readIds]
+  );
+
+  const resetSearch = () => setFilters(createDefaultFilters());
+
+  const appliedDateRange = useMemo(
+    () => effectiveDateRange(filters),
+    [filters.dateFrom, filters.dateTo]
+  );
+
+  const datesAreDefault =
+    !filters.dateFrom.trim() && !filters.dateTo.trim();
 
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-zinc-900">검색항목</h2>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+        <p className="mt-0.5 text-xs text-zinc-500">
+          일자를 비우면 최근 6개월 기준으로 조회합니다.
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:items-end">
           <label className="block min-w-0">
             <span className="text-xs font-medium text-zinc-600">서류종류</span>
             <select
@@ -153,6 +205,32 @@ export default function FormsHomeBoard({
                 className="min-w-0 flex-1 rounded-xl border border-zinc-200 px-2 py-2 text-sm outline-none focus:border-zinc-400"
               />
             </div>
+            {datesAreDefault ? (
+              <p className="mt-1 text-[11px] text-zinc-400">
+                {appliedDateRange.from} ~ {appliedDateRange.to} (6개월)
+              </p>
+            ) : null}
+          </label>
+          <label className="block min-w-0">
+            <span className="text-xs font-medium text-zinc-600">제품구분</span>
+            <select
+              value={filters.productCategory}
+              onChange={(e) =>
+                setFilters((f) => ({
+                  ...f,
+                  productCategory: e.target
+                    .value as SearchFilters["productCategory"],
+                }))
+              }
+              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
+            >
+              <option value="">전체</option>
+              {PRODUCT_CATEGORY_OPTIONS.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="block min-w-0">
             <span className="text-xs font-medium text-zinc-600">발행자</span>
@@ -166,7 +244,7 @@ export default function FormsHomeBoard({
               className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
             />
           </label>
-          <label className="block min-w-0">
+          <label className="block min-w-0 sm:col-span-2 lg:col-span-1">
             <span className="text-xs font-medium text-zinc-600">내용</span>
             <input
               type="search"
@@ -194,7 +272,7 @@ export default function FormsHomeBoard({
         <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
           <h2 className="text-sm font-semibold text-zinc-900">최근게시판</h2>
           <p className="mt-0.5 text-xs text-zinc-500">
-            안 읽은 글은 굵은 검정, 읽은 글은 옅은 회색으로 표시됩니다.
+            안 읽은 글만 표시됩니다.
           </p>
         </div>
 
@@ -212,7 +290,7 @@ export default function FormsHomeBoard({
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {unreadRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
@@ -220,62 +298,54 @@ export default function FormsHomeBoard({
                   >
                     {rows.length === 0
                       ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
-                      : "검색 조건에 맞는 서식이 없습니다."}
+                      : searchFiltered.length === 0
+                        ? "검색 조건에 맞는 서식이 없습니다."
+                        : "안 읽은 글이 없습니다."}
                   </td>
                 </tr>
               ) : (
-                filtered.map((row) => {
-                  const read = readIds.has(row.id);
-                  const rowClass = read
-                    ? "font-normal text-zinc-500"
-                    : "font-bold text-zinc-900";
-                  const linkClass = read
-                    ? "text-zinc-500 hover:text-zinc-700"
-                    : "text-zinc-900 hover:text-sky-800";
-
-                  return (
-                    <tr
-                      key={row.id}
-                      className="border-t border-zinc-100 hover:bg-zinc-50/80"
-                    >
-                      <td className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}>
-                        <Link
-                          href={`/forms/${row.id}`}
-                          prefetch
-                          className={`hover:underline ${linkClass}`}
-                        >
-                          {cellText(row.no)}
-                        </Link>
-                      </td>
-                      <td className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}>
-                        {cellText(row.docDate)}
-                      </td>
-                      <td className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}>
-                        {row.formTypeLabel}
-                      </td>
-                      <td className={`px-3 py-2.5 align-top ${rowClass}`}>
-                        <div className="line-clamp-2 break-words whitespace-pre-wrap">
-                          {cellText(row.productName)}
-                        </div>
-                      </td>
-                      <td className={`px-3 py-2.5 align-top ${rowClass}`}>
-                        <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                          {cellText(row.content)}
-                        </div>
-                      </td>
-                      <td className={`px-3 py-2.5 align-top ${rowClass}`}>
-                        <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                          {cellText(row.causeAnalysis)}
-                        </div>
-                      </td>
-                      <td className={`px-3 py-2.5 align-top ${rowClass}`}>
-                        <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                          {cellText(row.handlingContent)}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                unreadRows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-t border-zinc-100 hover:bg-zinc-50/80"
+                  >
+                    <td className="min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top font-bold text-zinc-900">
+                      <Link
+                        href={`/forms/${row.id}`}
+                        prefetch
+                        className="text-zinc-900 hover:text-sky-800 hover:underline"
+                      >
+                        {cellText(row.no)}
+                      </Link>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 align-top font-bold text-zinc-900">
+                      {cellText(row.docDate)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 align-top font-bold text-zinc-900">
+                      {row.formTypeLabel}
+                    </td>
+                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
+                      <div className="line-clamp-2 break-words whitespace-pre-wrap">
+                        {cellText(row.productName)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
+                      <div className="line-clamp-3 break-words whitespace-pre-wrap">
+                        {cellText(row.content)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
+                      <div className="line-clamp-3 break-words whitespace-pre-wrap">
+                        {cellText(row.causeAnalysis)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
+                      <div className="line-clamp-3 break-words whitespace-pre-wrap">
+                        {cellText(row.handlingContent)}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

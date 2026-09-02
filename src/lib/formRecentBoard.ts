@@ -11,6 +11,7 @@ export type RecentBoardRow = {
   formType: FormTypeKey;
   formTypeLabel: string;
   author: string;
+  productCategory: string;
   productName: string;
   content: string;
   causeAnalysis: string;
@@ -128,6 +129,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.complaintProductName) || "—",
       content: content || "—",
       causeAnalysis:
@@ -160,6 +162,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.requestReasonDetails) || "—",
       causeAnalysis: "—",
@@ -201,6 +204,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.problemAndRequest) || "—",
       causeAnalysis: "—",
@@ -226,6 +230,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      productCategory: "",
       productName: "—",
       content: textOrEmpty(p?.content) || "—",
       causeAnalysis: "—",
