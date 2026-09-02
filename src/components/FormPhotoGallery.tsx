@@ -29,7 +29,7 @@ export default function FormPhotoGallery({
           />
         ))}
         {legacyNote && urls.length === 0 ? (
-          <div className="whitespace-pre-wrap rounded-xl border border-zinc-100 bg-white px-3 py-3 text-sm text-zinc-800 shadow-sm">
+          <div className="whitespace-pre-wrap form-detail-display-emphasis text-zinc-800">
             {String(legacyNote)}
           </div>
         ) : null}

@@ -319,7 +319,7 @@ export default function NewFormClient({
           isAbLike ||
           isSuggestion
         }
-        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+        className="overflow-hidden rounded-2xl border border-zinc-200"
       >
         {editFormId ? (
           <>
@@ -327,7 +327,7 @@ export default function NewFormClient({
             <input type="hidden" name="type" value={type} />
           </>
         ) : null}
-        <div className="grid gap-4 p-6">
+        <div className="form-write-surface grid gap-4 bg-zinc-50 p-6">
           <div
             className={`grid gap-4 ${
               isComplaint || isQualityImprovement || isAbLike || isSuggestion
@@ -340,7 +340,7 @@ export default function NewFormClient({
                 서식 종류
               </span>
               {editFormId ? (
-                <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
+                <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-800">
                   {FORM_TYPE_LABEL[type]}
                 </div>
               ) : (
@@ -370,7 +370,7 @@ export default function NewFormClient({
                   tabIndex={-1}
                   value={nextComplaintNo}
                   aria-readonly
-                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-800 outline-none"
+                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-zinc-800 outline-none"
                 />
               </label>
             ) : isQualityImprovement ? (
@@ -385,7 +385,7 @@ export default function NewFormClient({
                       : nextQualityImprovementNo ?? ""
                   }
                   aria-readonly
-                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-800 outline-none"
+                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-zinc-800 outline-none"
                 />
               </label>
             ) : isAbnormalReport ? (
@@ -396,7 +396,7 @@ export default function NewFormClient({
                   tabIndex={-1}
                   value={editFormId ? nextComplaintNo : nextAbnormalReportNo ?? ""}
                   aria-readonly
-                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-800 outline-none"
+                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-zinc-800 outline-none"
                 />
               </label>
             ) : isWorkCoop ? (
@@ -407,7 +407,7 @@ export default function NewFormClient({
                   tabIndex={-1}
                   value={editFormId ? nextComplaintNo : nextWorkCoopNo ?? ""}
                   aria-readonly
-                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-800 outline-none"
+                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-zinc-800 outline-none"
                 />
               </label>
             ) : isSuggestion ? (
@@ -418,7 +418,7 @@ export default function NewFormClient({
                   tabIndex={-1}
                   value={editFormId ? nextComplaintNo : nextSuggestionNo ?? ""}
                   aria-readonly
-                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-800 outline-none"
+                  className="mt-1 w-full cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-zinc-800 outline-none"
                 />
               </label>
             ) : null}
@@ -1682,7 +1682,7 @@ export default function NewFormClient({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-zinc-100 px-6 py-4">
           <button
             type="submit"
             disabled={saving}

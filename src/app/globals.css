@@ -29,3 +29,51 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 서류 작성: 입력란(흰색) vs 주변 영역(연한 회색) */
+.form-write-surface {
+  @apply bg-zinc-50;
+}
+
+.form-write-surface
+  :is(
+    input:not([type="hidden"]):not([readonly]):not([disabled]),
+    select:not([disabled]),
+    textarea:not([readonly]):not([disabled])
+  ) {
+  @apply bg-white;
+}
+
+/* 서류 조회: 표시 영역은 흰 박스, 바탕은 연한 회색 */
+.form-detail-surface {
+  @apply bg-zinc-50;
+}
+
+.form-detail-display {
+  @apply rounded-xl border border-zinc-200/90 bg-white px-3 py-2.5 text-sm leading-relaxed text-zinc-900;
+}
+
+.form-detail-display-emphasis {
+  @apply whitespace-pre-wrap rounded-xl border border-zinc-200/90 bg-white px-3 py-3 text-sm leading-relaxed text-zinc-900 shadow-sm;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+}

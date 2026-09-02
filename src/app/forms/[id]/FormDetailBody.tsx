@@ -26,13 +26,7 @@ function DetailBlock({
   return (
     <div className="min-w-0 space-y-1.5">
       <div className="text-xs font-medium text-zinc-500">{label}</div>
-      <div
-        className={
-          emphasize
-            ? "whitespace-pre-wrap rounded-xl border border-zinc-100 bg-white px-3 py-3 text-sm leading-relaxed text-zinc-900 shadow-sm"
-            : "break-words text-sm leading-relaxed text-zinc-900"
-        }
-      >
+      <div className={emphasize ? "form-detail-display-emphasis" : "form-detail-display"}>
         {children}
       </div>
     </div>
@@ -47,7 +41,7 @@ function InfoRow({
   forceHorizontal?: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white">
+    <div className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm">
       <div
         className={`divide-y divide-zinc-200 ${forceHorizontal ? "flex divide-x divide-y-0" : "md:flex md:divide-x md:divide-y-0"}`}
       >
@@ -376,13 +370,13 @@ export async function FormDetailBody({ id }: { id: string }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,20rem)] xl:grid-cols-[minmax(0,1fr)_22rem] items-start">
         <section className="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-          <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 sm:px-5">
+          <div className="border-b border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-800 sm:px-5">
             내용
           </div>
-          <div className="space-y-6 p-4 sm:p-6">
+          <div className="form-detail-surface space-y-6 bg-zinc-50 p-4 sm:p-6">
             {String(form.type) === "COMPLAINT" && receipt ? (
-              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-b from-zinc-50/95 to-white">
-                <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-white/70 px-4 py-3 sm:px-5">
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-zinc-100 px-4 py-3 sm:px-5">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-sm font-bold text-white">
                     1
                   </span>
@@ -455,8 +449,8 @@ export async function FormDetailBody({ id }: { id: string }) {
 
             {String(form.type) === "QUALITY_IMPROVEMENT" && qi?.receipt ? (
               <div className="space-y-6">
-                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-b from-zinc-50/95 to-white">
-                  <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-white/70 px-4 py-3 sm:px-5">
+                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                  <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-zinc-100 px-4 py-3 sm:px-5">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-sm font-bold text-white">
                       1
                     </span>
@@ -529,7 +523,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                 </div>
 
                 {qi.review ? (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                         2
@@ -575,7 +569,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                 ) : null}
 
                 {qi.requesterConfirm ? (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                         3
@@ -608,8 +602,8 @@ export async function FormDetailBody({ id }: { id: string }) {
               </div>
             ) : String(form.type) === "SUGGESTION" && sg?.proposal ? (
               <div className="space-y-6">
-                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-b from-zinc-50/95 to-white">
-                  <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-white/70 px-4 py-3 sm:px-5">
+                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                  <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-zinc-100 px-4 py-3 sm:px-5">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-sm font-bold text-white">
                       1
                     </span>
@@ -659,7 +653,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                 </div>
 
                 {sg.reviewResult ? (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                         2
@@ -728,8 +722,8 @@ export async function FormDetailBody({ id }: { id: string }) {
               </div>
             ) : abLike?.report ? (
               <div className="space-y-6">
-                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-b from-zinc-50/95 to-white">
-                  <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-white/70 px-4 py-3 sm:px-5">
+                <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                  <div className="flex flex-wrap items-center gap-3 border-b border-zinc-200/90 bg-zinc-100 px-4 py-3 sm:px-5">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-sm font-bold text-white">
                       1
                     </span>
@@ -817,7 +811,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                 </div>
 
                 {abLike.handlingReport ? (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                         2
@@ -876,7 +870,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                 ) : null}
 
                 {abLike.reporterConfirm ? (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                         3
@@ -908,7 +902,7 @@ export async function FormDetailBody({ id }: { id: string }) {
                 ) : null}
               </div>
             ) : String(form.type) !== "COMPLAINT" || !receipt ? (
-              <div className="space-y-4 rounded-xl border border-zinc-100 bg-zinc-50/60 p-4 sm:p-5">
+              <div className="space-y-4 rounded-xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                 <div>
                   <div className="text-xs font-medium text-zinc-500">요약</div>
                   <div className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-zinc-900">
@@ -929,7 +923,7 @@ export async function FormDetailBody({ id }: { id: string }) {
             ) : null}
 
             {String(form.type) === "COMPLAINT" && outsideAs ? (
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                     2
@@ -985,7 +979,7 @@ export async function FormDetailBody({ id }: { id: string }) {
             ) : null}
 
             {String(form.type) === "COMPLAINT" && prodReport ? (
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                     3
@@ -1083,7 +1077,7 @@ export async function FormDetailBody({ id }: { id: string }) {
             ) : null}
 
             {String(form.type) === "COMPLAINT" && labReport ? (
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                     4
@@ -1136,7 +1130,7 @@ export async function FormDetailBody({ id }: { id: string }) {
             ) : null}
 
             {String(form.type) === "COMPLAINT" && recoveryHandling ? (
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/40 p-4 sm:p-5">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-100/70 p-4 sm:p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-white">
                     5
