@@ -26,9 +26,21 @@ function textOrEmpty(v: unknown): string {
 
 function dateRaw(v: unknown): string {
   if (v === undefined || v === null) return "";
+  if (v instanceof Date) {
+    if (Number.isNaN(v.getTime())) return "";
+    const y = v.getFullYear();
+    const mo = String(v.getMonth() + 1).padStart(2, "0");
+    const day = String(v.getDate()).padStart(2, "0");
+    return `${y}-${mo}-${day}`;
+  }
   const s = String(v).trim();
-  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
-  if (m) return m[1];
+  if (s === "") return "";
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dotted = s.match(/^(\d{4})[./](\d{1,2})[./](\d{1,2})/);
+  if (dotted) {
+    return `${dotted[1]}-${dotted[2].padStart(2, "0")}-${dotted[3].padStart(2, "0")}`;
+  }
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return "";
   const y = d.getFullYear();

@@ -69,6 +69,116 @@ function effectiveDateRange(filters: SearchFilters): {
   return { from: fromQ, to: toQ };
 }
 
+function matchesDateRange(
+  docDateRaw: string,
+  from: string,
+  to: string
+): boolean {
+  if (!docDateRaw) return true;
+  if (from && docDateRaw < from) return false;
+  if (to && docDateRaw > to) return false;
+  return true;
+}
+
+function FormsBoardTable({
+  rows,
+  readIds,
+  emptyMessage,
+}: {
+  rows: RecentBoardRow[];
+  readIds: Set<string>;
+  emptyMessage: string;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-[1000px] w-full border-separate border-spacing-0 text-sm">
+        <thead>
+          <tr className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
+            <th className="min-w-[110px] whitespace-nowrap px-3 py-2.5">NO</th>
+            <th className="whitespace-nowrap px-3 py-2.5">일자</th>
+            <th className="whitespace-nowrap px-3 py-2.5">서류종류</th>
+            <th className="min-w-[120px] px-3 py-2.5">제품명</th>
+            <th className="min-w-[180px] px-3 py-2.5">내용</th>
+            <th className="min-w-[140px] px-3 py-2.5">원인분석</th>
+            <th className="min-w-[140px] px-3 py-2.5">처리내용</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td
+                colSpan={7}
+                className="px-4 py-10 text-center text-sm text-zinc-500"
+              >
+                {emptyMessage}
+              </td>
+            </tr>
+          ) : (
+            rows.map((row) => {
+              const read = readIds.has(row.id);
+              const rowClass = read
+                ? "font-normal text-zinc-500"
+                : "font-bold text-zinc-900";
+              const linkClass = read
+                ? "text-zinc-500 hover:text-zinc-700"
+                : "text-zinc-900 hover:text-sky-800";
+
+              return (
+                <tr
+                  key={row.id}
+                  className="border-t border-zinc-100 hover:bg-zinc-50/80"
+                >
+                  <td
+                    className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                  >
+                    <Link
+                      href={`/forms/${row.id}`}
+                      prefetch
+                      className={`hover:underline ${linkClass}`}
+                    >
+                      {cellText(row.no)}
+                    </Link>
+                  </td>
+                  <td
+                    className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                  >
+                    {cellText(row.docDate)}
+                  </td>
+                  <td
+                    className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                  >
+                    {row.formTypeLabel}
+                  </td>
+                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                    <div className="line-clamp-2 break-words whitespace-pre-wrap">
+                      {cellText(row.productName)}
+                    </div>
+                  </td>
+                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
+                      {cellText(row.content)}
+                    </div>
+                  </td>
+                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
+                      {cellText(row.causeAnalysis)}
+                    </div>
+                  </td>
+                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
+                      {cellText(row.handlingContent)}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function FormsHomeBoard({
   rows,
   userId,
@@ -125,10 +235,7 @@ export default function FormsHomeBoard({
 
     return rows.filter((row) => {
       if (typeQ && row.formType !== typeQ) return false;
-      const raw = row.docDateRaw;
-      if (!raw) return false;
-      if (from && raw < from) return false;
-      if (to && raw > to) return false;
+      if (!matchesDateRange(row.docDateRaw, from, to)) return false;
       if (categoryQ && row.productCategory !== categoryQ) return false;
       if (authorQ && !row.author.toLowerCase().includes(authorQ)) return false;
       if (contentQ) {
@@ -139,10 +246,13 @@ export default function FormsHomeBoard({
     });
   }, [rows, filters]);
 
-  const unreadRows = useMemo(
-    () => searchFiltered.filter((row) => !readIds.has(row.id)),
-    [searchFiltered, readIds]
-  );
+  const recentUnreadRows = useMemo(() => {
+    const { dateFrom, dateTo } = defaultDateRange();
+    return rows.filter((row) => {
+      if (readIds.has(row.id)) return false;
+      return matchesDateRange(row.docDateRaw, dateFrom, dateTo);
+    });
+  }, [rows, readIds]);
 
   const resetSearch = () => setFilters(createDefaultFilters());
 
@@ -153,6 +263,11 @@ export default function FormsHomeBoard({
 
   const datesAreDefault =
     !filters.dateFrom.trim() && !filters.dateTo.trim();
+
+  const searchEmptyMessage =
+    rows.length === 0
+      ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
+      : "검색 조건에 맞는 서식이 없습니다.";
 
   return (
     <div className="space-y-6">
@@ -257,7 +372,10 @@ export default function FormsHomeBoard({
             />
           </label>
         </div>
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-zinc-500">
+            검색 결과 {searchFiltered.length}건
+          </p>
           <button
             type="button"
             onClick={resetSearch}
@@ -270,86 +388,34 @@ export default function FormsHomeBoard({
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
         <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
-          <h2 className="text-sm font-semibold text-zinc-900">최근게시판</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">검색 결과</h2>
           <p className="mt-0.5 text-xs text-zinc-500">
-            안 읽은 글만 표시됩니다.
+            읽은 글은 옅은 회색, 안 읽은 글은 굵은 검정으로 표시됩니다.
           </p>
         </div>
+        <FormsBoardTable
+          rows={searchFiltered}
+          readIds={readIds}
+          emptyMessage={searchEmptyMessage}
+        />
+      </section>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-[1000px] w-full border-separate border-spacing-0 text-sm">
-            <thead>
-              <tr className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                <th className="min-w-[110px] whitespace-nowrap px-3 py-2.5">NO</th>
-                <th className="whitespace-nowrap px-3 py-2.5">일자</th>
-                <th className="whitespace-nowrap px-3 py-2.5">서류종류</th>
-                <th className="min-w-[120px] px-3 py-2.5">제품명</th>
-                <th className="min-w-[180px] px-3 py-2.5">내용</th>
-                <th className="min-w-[140px] px-3 py-2.5">원인분석</th>
-                <th className="min-w-[140px] px-3 py-2.5">처리내용</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unreadRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-10 text-center text-sm text-zinc-500"
-                  >
-                    {rows.length === 0
-                      ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
-                      : searchFiltered.length === 0
-                        ? "검색 조건에 맞는 서식이 없습니다."
-                        : "안 읽은 글이 없습니다."}
-                  </td>
-                </tr>
-              ) : (
-                unreadRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-t border-zinc-100 hover:bg-zinc-50/80"
-                  >
-                    <td className="min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top font-bold text-zinc-900">
-                      <Link
-                        href={`/forms/${row.id}`}
-                        prefetch
-                        className="text-zinc-900 hover:text-sky-800 hover:underline"
-                      >
-                        {cellText(row.no)}
-                      </Link>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 align-top font-bold text-zinc-900">
-                      {cellText(row.docDate)}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 align-top font-bold text-zinc-900">
-                      {row.formTypeLabel}
-                    </td>
-                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
-                      <div className="line-clamp-2 break-words whitespace-pre-wrap">
-                        {cellText(row.productName)}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
-                      <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                        {cellText(row.content)}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
-                      <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                        {cellText(row.causeAnalysis)}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 align-top font-bold text-zinc-900">
-                      <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                        {cellText(row.handlingContent)}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      <section className="rounded-2xl border border-zinc-200 bg-white">
+        <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
+          <h2 className="text-sm font-semibold text-zinc-900">최근게시판</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            최근 6개월 안 읽은 글만 표시됩니다.
+          </p>
         </div>
+        <FormsBoardTable
+          rows={recentUnreadRows}
+          readIds={readIds}
+          emptyMessage={
+            rows.length === 0
+              ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
+              : "안 읽은 글이 없습니다."
+          }
+        />
       </section>
     </div>
   );

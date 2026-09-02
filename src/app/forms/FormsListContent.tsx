@@ -65,7 +65,7 @@ export default async function FormsListContent({
     const forms = await prisma.form.findMany({
       where: undefined,
       orderBy: { createdAt: "desc" },
-      take: 100,
+      take: 500,
       select: {
         ...formListSelect,
         data: true,

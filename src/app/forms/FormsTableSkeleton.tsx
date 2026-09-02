@@ -26,6 +26,11 @@ export default function FormsTableSkeleton({ type }: SkeletonProps) {
             <div key={i} className="mx-2 my-2 h-10 animate-pulse rounded bg-zinc-100" />
           ))}
         </div>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="mx-2 my-2 h-10 animate-pulse rounded bg-zinc-100" />
+          ))}
+        </div>
       </div>
     );
   }
