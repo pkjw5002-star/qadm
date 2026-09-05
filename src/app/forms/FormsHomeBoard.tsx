@@ -48,7 +48,8 @@ function defaultDateRange(): Pick<SearchFilters, "dateFrom" | "dateTo"> {
 function createDefaultFilters(): SearchFilters {
   return {
     formType: "",
-    ...defaultDateRange(),
+    dateFrom: "",
+    dateTo: "",
     productCategory: "",
     author: "",
     handler: "",
@@ -84,13 +85,10 @@ function effectiveDateRange(filters: SearchFilters): {
   from: string;
   to: string;
 } {
-  const fromQ = filters.dateFrom.trim();
-  const toQ = filters.dateTo.trim();
-  if (!fromQ && !toQ) {
-    const defaults = defaultDateRange();
-    return { from: defaults.dateFrom, to: defaults.dateTo };
-  }
-  return { from: fromQ, to: toQ };
+  return {
+    from: filters.dateFrom.trim(),
+    to: filters.dateTo.trim(),
+  };
 }
 
 function matchesDateRange(
@@ -348,6 +346,60 @@ export default function FormsHomeBoard({
 
   const resetSearch = () => setFilters(createDefaultFilters());
 
+  const downloadSearchExcel = useCallback(async () => {
+    const XLSX = await import("xlsx");
+    const headers = [
+      "NO",
+      "일자",
+      "서류종류",
+      "제품구분",
+      "제품명",
+      "내용",
+      "조치내용",
+      "원인분석 및 처리",
+      "발행자",
+      "처리자",
+      "완료",
+    ] as const;
+
+    const data = searchFiltered.map((row) => ({
+      NO: cellText(row.no),
+      일자: cellText(row.docDate),
+      서류종류: row.formTypeLabel,
+      제품구분: cellText(row.productCategory),
+      제품명: cellText(row.productName),
+      내용: cellText(row.content),
+      조치내용: cellText(row.handlingContent),
+      "원인분석 및 처리": cellText(row.causeAnalysis),
+      발행자: cellText(row.author),
+      처리자: cellText(row.handler),
+      완료: row.completed ? "완료" : "미완료",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data, {
+      header: [...headers],
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "검색결과");
+    const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+    const blob = new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const date = new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    a.download = `qadm-전체검색-${y}${m}${d}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [searchFiltered]);
+
   const searchEmptyMessage =
     rows.length === 0
       ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
@@ -478,6 +530,15 @@ export default function FormsHomeBoard({
           <span className="shrink-0 text-zinc-500">
             {searchFiltered.length}건
           </span>
+          <button
+            type="button"
+            onClick={() => void downloadSearchExcel()}
+            disabled={searchFiltered.length === 0}
+            className="shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+            title="현재 검색결과 기준으로 다운로드"
+          >
+            엑셀 다운로드
+          </button>
           <button
             type="button"
             onClick={resetSearch}
