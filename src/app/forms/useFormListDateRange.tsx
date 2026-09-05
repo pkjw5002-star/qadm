@@ -188,7 +188,7 @@ export function useFormListDateRange(dateColumnId: string, dateLabel: string) {
           value={dateFrom}
           onChange={(e) => onDateFromChange(e.target.value)}
           aria-label={`${dateLabel} 시작`}
-          className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-[11px] outline-none focus:border-zinc-400"
+          className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm outline-none focus:border-zinc-400"
         />
         <span className="text-zinc-400">~</span>
         <input
@@ -196,7 +196,7 @@ export function useFormListDateRange(dateColumnId: string, dateLabel: string) {
           value={dateTo}
           onChange={(e) => onDateToChange(e.target.value)}
           aria-label={`${dateLabel} 종료`}
-          className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-[11px] outline-none focus:border-zinc-400"
+          className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm outline-none focus:border-zinc-400"
         />
       </div>
     </div>
