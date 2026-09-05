@@ -1,6 +1,9 @@
 import type { FormType } from "@/generated/prisma/client";
 import { FORM_TYPE_LABEL, type FormTypeKey } from "@/lib/formTypes";
-import { formatListDate } from "@/lib/formListSnapshot";
+import {
+  complaintListDateMissing,
+  formatListDate,
+} from "@/lib/formListSnapshot";
 
 export type RecentBoardRow = {
   id: string;
@@ -13,6 +16,8 @@ export type RecentBoardRow = {
   author: string;
   /** 서류별 처리자(부서/담당자 등) — 검색용 */
   handler: string;
+  /** 목록 highlightPending과 동일 기준 — 검색용 */
+  completed: boolean;
   productCategory: string;
   productName: string;
   content: string;
@@ -136,6 +141,9 @@ export function buildRecentBoardRow(params: {
     const rawDate = dateRaw(r?.date) || dateRaw(createdAt);
     const content =
       textOrEmpty(r?.productAndComplaint) || textOrEmpty(root.summary);
+    const causeDone =
+      Boolean(textOrEmpty(prod?.defectCauseAnalysis)) ||
+      Boolean(textOrEmpty(lab?.causeAnalysis));
     return {
       id,
       no: formNoFromData(data, title, "complaint"),
@@ -145,6 +153,7 @@ export function buildRecentBoardRow(params: {
       formTypeLabel,
       author,
       handler: textOrEmpty(r?.departmentAndOwner),
+      completed: causeDone,
       productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.complaintProductName) || "—",
       content: content || "—",
@@ -164,7 +173,7 @@ export function buildRecentBoardRow(params: {
           requestReasonDetails?: unknown;
           reviewDepartmentOwner?: unknown;
         };
-        review?: { improvementContent?: unknown };
+        review?: { date?: unknown; improvementContent?: unknown };
       };
     };
     const qi = root.qualityImprovement;
@@ -180,6 +189,7 @@ export function buildRecentBoardRow(params: {
       formTypeLabel,
       author,
       handler: textOrEmpty(r?.reviewDepartmentOwner),
+      completed: !complaintListDateMissing(v?.date),
       productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.requestReasonDetails) || "—",
@@ -199,7 +209,11 @@ export function buildRecentBoardRow(params: {
           problemAndRequest?: unknown;
           handlingDepartmentOwner?: unknown;
         };
-        handlingReport?: { causeAndActionPrevention?: unknown };
+        handlingReport?: {
+          date?: unknown;
+          plannedDateReason?: unknown;
+          causeAndActionPrevention?: unknown;
+        };
       };
       workCoop?: {
         report?: {
@@ -209,13 +223,22 @@ export function buildRecentBoardRow(params: {
           problemAndRequest?: unknown;
           handlingDepartmentOwner?: unknown;
         };
-        handlingReport?: { causeAndActionPrevention?: unknown };
+        handlingReport?: {
+          date?: unknown;
+          plannedDateReason?: unknown;
+          causeAndActionPrevention?: unknown;
+        };
       };
     };
     const b = root[branch];
     const r = b?.report;
     const h = b?.handlingReport;
     const rawDate = dateRaw(r?.date) || dateRaw(createdAt);
+    const completed =
+      type === "WORK_COOP"
+        ? !complaintListDateMissing(h?.date) &&
+          !complaintListDateMissing(h?.plannedDateReason)
+        : !complaintListDateMissing(h?.date);
     return {
       id,
       no: formNoFromData(data, title, branch),
@@ -225,6 +248,7 @@ export function buildRecentBoardRow(params: {
       formTypeLabel,
       author,
       handler: textOrEmpty(r?.handlingDepartmentOwner),
+      completed,
       productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.problemAndRequest) || "—",
@@ -240,6 +264,7 @@ export function buildRecentBoardRow(params: {
         reviewResult?: {
           processingContent?: unknown;
           processingHandler?: unknown;
+          processingPlannedDate?: unknown;
         };
       };
     };
@@ -255,6 +280,7 @@ export function buildRecentBoardRow(params: {
       formTypeLabel,
       author,
       handler: textOrEmpty(rr?.processingHandler),
+      completed: !complaintListDateMissing(rr?.processingPlannedDate),
       productCategory: "",
       productName: "—",
       content: textOrEmpty(p?.content) || "—",

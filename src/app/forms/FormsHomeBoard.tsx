@@ -22,6 +22,7 @@ type SearchFilters = {
   productCategory: "" | ProductCategory;
   author: string;
   handler: string;
+  completion: "" | "done" | "pending";
   content: string;
 };
 
@@ -49,6 +50,7 @@ function createDefaultFilters(): SearchFilters {
     productCategory: "",
     author: "",
     handler: "",
+    completion: "",
     content: "",
   };
 }
@@ -247,6 +249,7 @@ export default function FormsHomeBoard({
     const categoryQ = filters.productCategory;
     const authorQ = filters.author.trim().toLowerCase();
     const handlerQ = filters.handler.trim().toLowerCase();
+    const completionQ = filters.completion;
     const contentQ = filters.content.trim().toLowerCase();
 
     return rows.filter((row) => {
@@ -256,6 +259,8 @@ export default function FormsHomeBoard({
       if (authorQ && !row.author.toLowerCase().includes(authorQ)) return false;
       if (handlerQ && !row.handler.toLowerCase().includes(handlerQ))
         return false;
+      if (completionQ === "done" && !row.completed) return false;
+      if (completionQ === "pending" && row.completed) return false;
       if (contentQ) {
         const hay = `${row.content}\n${row.productName}\n${row.handlingContent}\n${row.causeAnalysis}`.toLowerCase();
         if (!hay.includes(contentQ)) return false;
@@ -293,7 +298,7 @@ export default function FormsHomeBoard({
                   formType: e.target.value as SearchFilters["formType"],
                 }))
               }
-              className="min-w-[7rem] rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs outline-none focus:border-zinc-400"
+              className="w-[5.25rem] rounded-lg border border-zinc-200 bg-white px-1.5 py-1 text-xs outline-none focus:border-zinc-400"
             >
               <option value="">전체</option>
               {FORM_TYPES.map((t) => (
@@ -336,7 +341,7 @@ export default function FormsHomeBoard({
                     .value as SearchFilters["productCategory"],
                 }))
               }
-              className="min-w-[6rem] rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs outline-none focus:border-zinc-400"
+              className="w-[4.5rem] rounded-lg border border-zinc-200 bg-white px-1.5 py-1 text-xs outline-none focus:border-zinc-400"
             >
               <option value="">전체</option>
               {PRODUCT_CATEGORY_OPTIONS.map((cat) => (
@@ -355,7 +360,7 @@ export default function FormsHomeBoard({
                 setFilters((f) => ({ ...f, author: e.target.value }))
               }
               placeholder="작성자"
-              className="w-28 rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
+              className="w-20 rounded-lg border border-zinc-200 px-1.5 py-1 text-xs outline-none focus:border-zinc-400"
             />
           </label>
           <label className="inline-flex min-w-0 items-center gap-1.5">
@@ -366,9 +371,26 @@ export default function FormsHomeBoard({
               onChange={(e) =>
                 setFilters((f) => ({ ...f, handler: e.target.value }))
               }
-              placeholder="부서·담당자"
-              className="w-28 rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
+              placeholder="부서·담당"
+              className="w-20 rounded-lg border border-zinc-200 px-1.5 py-1 text-xs outline-none focus:border-zinc-400"
             />
+          </label>
+          <label className="inline-flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 font-medium text-zinc-600">완료</span>
+            <select
+              value={filters.completion}
+              onChange={(e) =>
+                setFilters((f) => ({
+                  ...f,
+                  completion: e.target.value as SearchFilters["completion"],
+                }))
+              }
+              className="w-[4.75rem] rounded-lg border border-zinc-200 bg-white px-1.5 py-1 text-xs outline-none focus:border-zinc-400"
+            >
+              <option value="">전체</option>
+              <option value="done">완료</option>
+              <option value="pending">미완료</option>
+            </select>
           </label>
           <label className="inline-flex min-w-0 flex-1 items-center gap-1.5">
             <span className="shrink-0 font-medium text-zinc-600">내용</span>
