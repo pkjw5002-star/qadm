@@ -22,7 +22,6 @@ export default function FormsBoardNav({
 
   const onFormsList = pathname === "/forms";
   const allActive = onFormsList && !type;
-  const testReportsActive = pathname.startsWith("/test-reports");
 
   return (
     <div className="mx-auto flex w-full max-w-none items-center gap-3 px-4 py-2 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
@@ -41,13 +40,6 @@ export default function FormsBoardNav({
               {t.label}
             </Link>
           ))}
-          <Link
-            href="/test-reports"
-            prefetch
-            className={tabClass(testReportsActive)}
-          >
-            시험성적서
-          </Link>
         </div>
       </nav>
 

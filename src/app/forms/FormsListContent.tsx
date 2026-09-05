@@ -186,6 +186,8 @@ export default async function FormsListContent({
           rows={qualityRows}
           filterTitle="미검토"
           filterHint="(검토일자 없음)"
+          dateColumnId="createdAt"
+          dateColumnLabel="작성일"
         />
       ) : isAbnormalList ? (
         <ReviewProcessFilterFormsTable
@@ -194,6 +196,8 @@ export default async function FormsListContent({
           rows={abnormalRows}
           filterTitle="미처리"
           filterHint="(처리일자 없음)"
+          dateColumnId="reportDate"
+          dateColumnLabel="신고일자"
         />
       ) : isWorkCoopList ? (
         <ReviewProcessFilterFormsTable
@@ -202,6 +206,8 @@ export default async function FormsListContent({
           rows={workCoopRows}
           filterTitle="미처리"
           filterHint="(처리일자 또는 처리예정일자·사유 없음)"
+          dateColumnId="reportDate"
+          dateColumnLabel="요청일자"
         />
       ) : (
         <ReviewProcessFilterFormsTable
@@ -210,6 +216,8 @@ export default async function FormsListContent({
           rows={suggestionRows}
           filterTitle="미처리"
           filterHint="(처리(예정)일자 없음)"
+          dateColumnId="createdAt"
+          dateColumnLabel="작성일자"
         />
       )}
     </div>
