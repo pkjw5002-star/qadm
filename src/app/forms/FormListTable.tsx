@@ -60,7 +60,7 @@ function isNoColumn(col: FormListColumn | undefined): boolean {
 
 function stickyThClass(col: FormListColumn | undefined): string {
   if (!isNoColumn(col)) return "";
-  return `sticky left-0 z-30 bg-zinc-50/95 ${STICKY_NO_SHADOW} after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-zinc-200`;
+  return `sticky left-0 z-30 bg-zinc-100 ${STICKY_NO_SHADOW} after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-zinc-300`;
 }
 
 function stickyTdClass(col: FormListColumn | undefined): string {
@@ -560,7 +560,7 @@ export default function FormListTable({
               />
             ))}
           </colgroup>
-          <thead className="sticky top-0 z-40 border-b border-zinc-200 bg-zinc-50/95 text-left text-xs font-medium text-zinc-600 backdrop-blur-sm">
+          <thead className="sticky top-0 z-40 border-b border-zinc-300 bg-zinc-100 text-left text-xs font-medium text-zinc-600">
             <tr>
               {visibleCols.map((id) => {
                 const col = colById.get(id);
