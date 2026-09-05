@@ -1,5 +1,4 @@
 import type { FormTypeKey } from "@/lib/formTypes";
-import { FORM_TYPE_LABEL } from "@/lib/formTypes";
 
 type SkeletonProps = {
   type?: FormTypeKey;
@@ -66,21 +65,10 @@ export default function FormsTableSkeleton({ type }: SkeletonProps) {
 }
 
 export function FormsListShell({
-  type,
   children,
 }: {
   type?: FormTypeKey;
   children: React.ReactNode;
 }) {
-  const listPageTitle =
-    type !== undefined ? FORM_TYPE_LABEL[type] : "전체";
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">{listPageTitle}</h1>
-      </div>
-      {children}
-    </div>
-  );
+  return <div className="space-y-4">{children}</div>;
 }
