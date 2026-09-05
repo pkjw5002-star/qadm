@@ -10,13 +10,29 @@ import {
 
 type DatePreset = "all" | "1m" | "3m" | "6m" | "year" | "custom";
 
-const DATE_PRESETS: { id: Exclude<DatePreset, "custom">; label: string }[] = [
-  { id: "all", label: "전체" },
-  { id: "1m", label: "1개월" },
-  { id: "3m", label: "3개월" },
-  { id: "6m", label: "6개월" },
-  { id: "year", label: "올해" },
-];
+const RECEIPT_DATE_PRESET_OPTIONS = [
+  "전체",
+  "1개월",
+  "3개월",
+  "6개월",
+  "올해",
+] as const;
+
+const PRESET_BY_LABEL: Record<string, Exclude<DatePreset, "custom">> = {
+  전체: "all",
+  "1개월": "1m",
+  "3개월": "3m",
+  "6개월": "6m",
+  올해: "year",
+};
+
+const LABEL_BY_PRESET: Record<Exclude<DatePreset, "custom">, string> = {
+  all: "전체",
+  "1m": "1개월",
+  "3m": "3개월",
+  "6m": "6개월",
+  year: "올해",
+};
 
 function toDateInputValue(date: Date): string {
   const y = date.getFullYear();
@@ -77,6 +93,7 @@ export default function ComplaintFormsTable({
   const [onlyNotRecovered, setOnlyNotRecovered] = useState(false);
   const [onlyRecoveredIncomplete, setOnlyRecoveredIncomplete] =
     useState(false);
+  const [dateFilterOn, setDateFilterOn] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -86,27 +103,75 @@ export default function ComplaintFormsTable({
     if (preset === "all") {
       setDateFrom("");
       setDateTo("");
+      setDateFilterOn(false);
       return;
     }
     const range = rangeForPreset(preset);
     setDateFrom(range.from);
     setDateTo(range.to);
+    setDateFilterOn(true);
   };
 
   const onDateFromChange = (value: string) => {
     setDateFrom(value);
+    setDateFilterOn(true);
     setDatePreset(detectPreset(value, dateTo));
   };
 
   const onDateToChange = (value: string) => {
     setDateTo(value);
+    setDateFilterOn(true);
     setDatePreset(detectPreset(dateFrom, value));
   };
 
+  const onDateFilterToggle = (checked: boolean) => {
+    setDateFilterOn(checked);
+    if (!checked) {
+      setDateFrom("");
+      setDateTo("");
+      setDatePreset("all");
+    }
+  };
+
+  const columns = useMemo(
+    () =>
+      COMPLAINT_FORM_LIST_COLUMNS.map((col) =>
+        col.id === "receiptDate"
+          ? {
+              ...col,
+              hideSearch: false,
+              filterOptions: RECEIPT_DATE_PRESET_OPTIONS,
+              filterExternal: true,
+            }
+          : col
+      ),
+    []
+  );
+
+  const externalColumnFilters = useMemo(
+    () => ({
+      receiptDate:
+        datePreset === "custom"
+          ? "직접"
+          : LABEL_BY_PRESET[datePreset === "all" ? "all" : datePreset],
+    }),
+    [datePreset]
+  );
+
+  const onExternalColumnFilterChange = (columnId: string, value: string) => {
+    if (columnId !== "receiptDate") return;
+    if (value === "직접") return;
+    const preset = PRESET_BY_LABEL[value] ?? "all";
+    applyPreset(preset);
+  };
+
   const listRows = useMemo(() => {
-    let next = rows.filter((r) =>
-      matchesReceiptDateRange(r, dateFrom.trim(), dateTo.trim())
-    );
+    let next = rows;
+    if (dateFilterOn) {
+      next = next.filter((r) =>
+        matchesReceiptDateRange(r, dateFrom.trim(), dateTo.trim())
+      );
+    }
     if (!onlyNotRecovered && !onlyRecoveredIncomplete) return next;
     if (onlyNotRecovered && onlyRecoveredIncomplete) {
       return next.filter(
@@ -119,6 +184,7 @@ export default function ComplaintFormsTable({
     return next.filter((r) => r.filterRecoveredIncomplete);
   }, [
     rows,
+    dateFilterOn,
     dateFrom,
     dateTo,
     onlyNotRecovered,
@@ -126,33 +192,17 @@ export default function ComplaintFormsTable({
   ]);
 
   const leadingToolbar = (
-    <div className="flex flex-col gap-2 text-xs text-zinc-800">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        <span className="shrink-0 font-medium text-zinc-600">접수일</span>
-        <div className="flex flex-wrap items-center gap-1">
-          {DATE_PRESETS.map((p) => {
-            const active = datePreset === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => applyPreset(p.id)}
-                className={
-                  active
-                    ? "rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] font-semibold text-white"
-                    : "rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50"
-                }
-              >
-                {p.label}
-              </button>
-            );
-          })}
-          {datePreset === "custom" ? (
-            <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-800">
-              직접
-            </span>
-          ) : null}
-        </div>
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-zinc-800">
+      <div className="inline-flex flex-wrap items-center gap-2">
+        <label className="inline-flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={dateFilterOn}
+            onChange={(e) => onDateFilterToggle(e.target.checked)}
+            className="rounded border-zinc-300 text-zinc-900"
+          />
+          <span>접수일</span>
+        </label>
         <div className="flex min-w-0 items-center gap-1.5">
           <input
             type="date"
@@ -171,39 +221,39 @@ export default function ComplaintFormsTable({
           />
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <label className="inline-flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={onlyNotRecovered}
-            onChange={(e) => setOnlyNotRecovered(e.target.checked)}
-            className="rounded border-zinc-300 text-zinc-900"
-          />
-          <span>미회수</span>
-          <span className="font-normal text-zinc-500">(회수일 없음)</span>
-        </label>
-        <label className="inline-flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={onlyRecoveredIncomplete}
-            onChange={(e) => setOnlyRecoveredIncomplete(e.target.checked)}
-            className="rounded border-zinc-300 text-zinc-900"
-          />
-          <span>회수 후 미완료</span>
-          <span className="font-normal text-zinc-500">
-            (회수일 있음·원인분석일 없음)
-          </span>
-        </label>
-      </div>
+      <label className="inline-flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          checked={onlyNotRecovered}
+          onChange={(e) => setOnlyNotRecovered(e.target.checked)}
+          className="rounded border-zinc-300 text-zinc-900"
+        />
+        <span>미회수</span>
+        <span className="font-normal text-zinc-500">(회수일 없음)</span>
+      </label>
+      <label className="inline-flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          checked={onlyRecoveredIncomplete}
+          onChange={(e) => setOnlyRecoveredIncomplete(e.target.checked)}
+          className="rounded border-zinc-300 text-zinc-900"
+        />
+        <span>회수 후 미완료</span>
+        <span className="font-normal text-zinc-500">
+          (회수일 있음·원인분석일 없음)
+        </span>
+      </label>
     </div>
   );
 
   return (
     <FormListTable
       storageKey={COMPLAINT_FORM_LIST_STORAGE_KEY}
-      columns={COMPLAINT_FORM_LIST_COLUMNS}
+      columns={columns}
       rows={listRows}
       leadingToolbar={leadingToolbar}
+      externalColumnFilters={externalColumnFilters}
+      onExternalColumnFilterChange={onExternalColumnFilterChange}
     />
   );
 }

@@ -109,6 +109,7 @@ function rowMatchesColumnFilters(
   filters: Record<string, string>
 ): boolean {
   for (const c of columns) {
+    if (c.filterExternal) continue;
     const raw = filters[c.id];
     if (raw === undefined || raw.trim() === "") continue;
     const q = raw.trim();
@@ -131,12 +132,16 @@ export default function FormListTable({
   columns,
   rows,
   leadingToolbar,
+  externalColumnFilters,
+  onExternalColumnFilterChange,
 }: {
   storageKey: string;
   columns: readonly FormListColumn[];
   rows: FormListRow[];
   /** 표 도구줄 왼쪽(예: 불만 전용 필터) */
   leadingToolbar?: ReactNode;
+  externalColumnFilters?: Record<string, string>;
+  onExternalColumnFilterChange?: (columnId: string, value: string) => void;
 }) {
   const userId = useFormsUserId();
   const colIds = useMemo(() => columns.map((c) => c.id), [columns]);
@@ -564,7 +569,10 @@ export default function FormListTable({
             <tr>
               {visibleCols.map((id) => {
                 const col = colById.get(id);
-                const filterActive = Boolean(columnFilters[id]?.trim());
+                const filterValue = col?.filterExternal
+                  ? (externalColumnFilters?.[id] ?? "")
+                  : (columnFilters[id] ?? "");
+                const filterActive = Boolean(filterValue.trim());
                 const filterControlClass = filterActive
                   ? "border-sky-300 bg-sky-50/70 text-zinc-900 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.15)]"
                   : "border-zinc-200/90 bg-white text-zinc-800";
@@ -584,27 +592,37 @@ export default function FormListTable({
                     </div>
                     {col?.hideSearch ? null : col?.filterOptions ? (
                       <select
-                        value={columnFilters[id] ?? ""}
-                        onChange={(e) =>
+                        value={filterValue}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          if (col.filterExternal) {
+                            onExternalColumnFilterChange?.(id, next);
+                            return;
+                          }
                           setColumnFilters((prev) => ({
                             ...prev,
-                            [id]: e.target.value,
-                          }))
-                        }
+                            [id]: next,
+                          }));
+                        }}
                         aria-label={`${labelFor(id)} 검색`}
                         className={`mt-1.5 box-border w-full min-w-0 max-w-full appearance-none rounded-md border px-1.5 py-1 text-[11px] font-normal outline-none transition focus:border-sky-400 focus:bg-white focus:ring-1 focus:ring-sky-200 ${filterControlClass}`}
                       >
-                        <option value="">전체</option>
+                        {col.filterExternal ? null : (
+                          <option value="">전체</option>
+                        )}
                         {col.filterOptions.map((opt) => (
                           <option key={opt} value={opt}>
                             {opt}
                           </option>
                         ))}
+                        {col.filterExternal && filterValue === "직접" ? (
+                          <option value="직접">직접</option>
+                        ) : null}
                       </select>
                     ) : (
                       <input
                         type="search"
-                        value={columnFilters[id] ?? ""}
+                        value={filterValue}
                         onChange={(e) =>
                           setColumnFilters((prev) => ({
                             ...prev,

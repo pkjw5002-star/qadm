@@ -15,6 +15,8 @@ export type FormListColumn = {
   filterOptions?: readonly string[];
   /** true면 열 헤더 검색창을 숨김 (툴바 등에서 별도 필터) */
   hideSearch?: boolean;
+  /** true면 filterOptions 선택을 부모에서 처리 (행 텍스트 매칭 안 함) */
+  filterExternal?: boolean;
 };
 
 export type FormListRow = {
