@@ -452,8 +452,8 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-center sm:px-5">
-          <h2 className="text-sm font-semibold text-white">검색 결과</h2>
+        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-left sm:px-5">
+          <h2 className="pl-[2ch] text-sm font-semibold text-white">검색 결과</h2>
         </div>
         <FormsBoardTable
           rows={searchFiltered}
@@ -463,8 +463,8 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-center sm:px-5">
-          <h2 className="text-sm font-semibold text-white">최근게시판</h2>
+        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-left sm:px-5">
+          <h2 className="pl-[2ch] text-sm font-semibold text-white">최근게시판</h2>
         </div>
         <FormsBoardTable
           rows={recentUnreadRows}
