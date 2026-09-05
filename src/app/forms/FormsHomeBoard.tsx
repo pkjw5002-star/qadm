@@ -89,19 +89,29 @@ function FormsBoardTable({
   readIds: Set<string>;
   emptyMessage: string;
 }) {
+  const cellBorder = "border-b border-r border-zinc-200 last:border-r-0";
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-[1080px] w-full border-separate border-spacing-0 text-sm">
         <thead>
-          <tr className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-            <th className="min-w-[110px] whitespace-nowrap px-3 py-2.5">NO</th>
-            <th className="whitespace-nowrap px-3 py-2.5">일자</th>
-            <th className="whitespace-nowrap px-3 py-2.5">서류종류</th>
-            <th className="whitespace-nowrap px-3 py-2.5">제품구분</th>
-            <th className="min-w-[120px] px-3 py-2.5">제품명</th>
-            <th className="min-w-[180px] px-3 py-2.5">내용</th>
-            <th className="min-w-[140px] px-3 py-2.5">원인분석 및 처리</th>
-            <th className="min-w-[140px] px-3 py-2.5">처리내용</th>
+          <tr className="bg-zinc-100 text-left text-xs font-medium text-zinc-700">
+            <th className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>
+              NO
+            </th>
+            <th className={`whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>일자</th>
+            <th className={`whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>
+              서류종류
+            </th>
+            <th className={`whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>
+              제품구분
+            </th>
+            <th className={`min-w-[120px] px-3 py-2.5 ${cellBorder}`}>제품명</th>
+            <th className={`min-w-[180px] px-3 py-2.5 ${cellBorder}`}>내용</th>
+            <th className={`min-w-[140px] px-3 py-2.5 ${cellBorder}`}>조치내용</th>
+            <th className={`min-w-[140px] px-3 py-2.5 ${cellBorder}`}>
+              원인분석 및 처리
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -125,12 +135,9 @@ function FormsBoardTable({
                 : "text-zinc-900 hover:text-sky-800";
 
               return (
-                <tr
-                  key={row.id}
-                  className="border-t border-zinc-100 hover:bg-zinc-50/80"
-                >
+                <tr key={row.id} className="hover:bg-zinc-50/80">
                   <td
-                    className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                    className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}
                   >
                     <Link
                       href={`/forms/${row.id}`}
@@ -141,38 +148,38 @@ function FormsBoardTable({
                     </Link>
                   </td>
                   <td
-                    className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                    className={`whitespace-nowrap px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}
                   >
                     {cellText(row.docDate)}
                   </td>
                   <td
-                    className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                    className={`whitespace-nowrap px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}
                   >
                     {row.formTypeLabel}
                   </td>
                   <td
-                    className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                    className={`whitespace-nowrap px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}
                   >
                     {cellText(row.productCategory)}
                   </td>
-                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                  <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
                     <div className="line-clamp-2 break-words whitespace-pre-wrap">
                       {cellText(row.productName)}
                     </div>
                   </td>
-                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                  <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
                     <div className="line-clamp-3 break-words whitespace-pre-wrap">
                       {cellText(row.content)}
                     </div>
                   </td>
-                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
-                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                      {cellText(row.causeAnalysis)}
-                    </div>
-                  </td>
-                  <td className={`px-3 py-2.5 align-top ${rowClass}`}>
+                  <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
                     <div className="line-clamp-3 break-words whitespace-pre-wrap">
                       {cellText(row.handlingContent)}
+                    </div>
+                  </td>
+                  <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
+                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
+                      {cellText(row.causeAnalysis)}
                     </div>
                   </td>
                 </tr>
@@ -372,8 +379,8 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-2 sm:px-5">
-          <h2 className="text-sm font-semibold text-zinc-900">검색 결과</h2>
+        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 sm:px-5">
+          <h2 className="text-sm font-semibold text-white">검색 결과</h2>
         </div>
         <FormsBoardTable
           rows={searchFiltered}
@@ -383,8 +390,8 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-2 sm:px-5">
-          <h2 className="text-sm font-semibold text-zinc-900">최근게시판</h2>
+        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 sm:px-5">
+          <h2 className="text-sm font-semibold text-white">최근게시판</h2>
         </div>
         <FormsBoardTable
           rows={recentUnreadRows}
