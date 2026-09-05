@@ -21,6 +21,7 @@ type SearchFilters = {
   dateTo: string;
   productCategory: "" | ProductCategory;
   author: string;
+  handler: string;
   content: string;
 };
 
@@ -47,6 +48,7 @@ function createDefaultFilters(): SearchFilters {
     ...defaultDateRange(),
     productCategory: "",
     author: "",
+    handler: "",
     content: "",
   };
 }
@@ -244,6 +246,7 @@ export default function FormsHomeBoard({
     const { from, to } = effectiveDateRange(filters);
     const categoryQ = filters.productCategory;
     const authorQ = filters.author.trim().toLowerCase();
+    const handlerQ = filters.handler.trim().toLowerCase();
     const contentQ = filters.content.trim().toLowerCase();
 
     return rows.filter((row) => {
@@ -251,6 +254,8 @@ export default function FormsHomeBoard({
       if (!matchesDateRange(row.docDateRaw, from, to)) return false;
       if (categoryQ && row.productCategory !== categoryQ) return false;
       if (authorQ && !row.author.toLowerCase().includes(authorQ)) return false;
+      if (handlerQ && !row.handler.toLowerCase().includes(handlerQ))
+        return false;
       if (contentQ) {
         const hay = `${row.content}\n${row.productName}\n${row.handlingContent}\n${row.causeAnalysis}`.toLowerCase();
         if (!hay.includes(contentQ)) return false;
@@ -350,6 +355,18 @@ export default function FormsHomeBoard({
                 setFilters((f) => ({ ...f, author: e.target.value }))
               }
               placeholder="작성자"
+              className="w-28 rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
+            />
+          </label>
+          <label className="inline-flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 font-medium text-zinc-600">처리자</span>
+            <input
+              type="search"
+              value={filters.handler}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, handler: e.target.value }))
+              }
+              placeholder="부서·담당자"
               className="w-28 rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
             />
           </label>

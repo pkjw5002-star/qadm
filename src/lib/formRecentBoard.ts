@@ -11,6 +11,8 @@ export type RecentBoardRow = {
   formType: FormTypeKey;
   formTypeLabel: string;
   author: string;
+  /** 서류별 처리자(부서/담당자 등) — 검색용 */
+  handler: string;
   productCategory: string;
   productName: string;
   content: string;
@@ -120,6 +122,7 @@ export function buildRecentBoardRow(params: {
           date?: unknown;
           productCategory?: unknown;
           complaintProductName?: unknown;
+          departmentAndOwner?: unknown;
           productAndComplaint?: unknown;
           actionContent?: unknown;
         };
@@ -141,6 +144,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      handler: textOrEmpty(r?.departmentAndOwner),
       productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.complaintProductName) || "—",
       content: content || "—",
@@ -158,6 +162,7 @@ export function buildRecentBoardRow(params: {
           productCategory?: unknown;
           itemSpec?: unknown;
           requestReasonDetails?: unknown;
+          reviewDepartmentOwner?: unknown;
         };
         review?: { improvementContent?: unknown };
       };
@@ -174,6 +179,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      handler: textOrEmpty(r?.reviewDepartmentOwner),
       productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.requestReasonDetails) || "—",
@@ -191,6 +197,7 @@ export function buildRecentBoardRow(params: {
           productCategory?: unknown;
           itemSpec?: unknown;
           problemAndRequest?: unknown;
+          handlingDepartmentOwner?: unknown;
         };
         handlingReport?: { causeAndActionPrevention?: unknown };
       };
@@ -200,6 +207,7 @@ export function buildRecentBoardRow(params: {
           productCategory?: unknown;
           itemSpec?: unknown;
           problemAndRequest?: unknown;
+          handlingDepartmentOwner?: unknown;
         };
         handlingReport?: { causeAndActionPrevention?: unknown };
       };
@@ -216,6 +224,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      handler: textOrEmpty(r?.handlingDepartmentOwner),
       productCategory: textOrEmpty(r?.productCategory),
       productName: textOrEmpty(r?.itemSpec) || "—",
       content: textOrEmpty(r?.problemAndRequest) || "—",
@@ -228,7 +237,10 @@ export function buildRecentBoardRow(params: {
     const root = data as {
       suggestion?: {
         proposal?: { date?: unknown; content?: unknown };
-        reviewResult?: { processingContent?: unknown };
+        reviewResult?: {
+          processingContent?: unknown;
+          processingHandler?: unknown;
+        };
       };
     };
     const p = root.suggestion?.proposal;
@@ -242,6 +254,7 @@ export function buildRecentBoardRow(params: {
       formType,
       formTypeLabel,
       author,
+      handler: textOrEmpty(rr?.processingHandler),
       productCategory: "",
       productName: "—",
       content: textOrEmpty(p?.content) || "—",
