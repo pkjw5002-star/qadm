@@ -97,13 +97,15 @@ function FormsBoardTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-[1080px] w-full border-separate border-spacing-0 text-sm">
+      <table className="min-w-[980px] w-full border-separate border-spacing-0 text-sm">
         <thead>
           <tr className="bg-zinc-100 text-center text-xs font-medium text-zinc-700">
-            <th className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>
+            <th className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder}`}>
               NO
             </th>
-            <th className={`whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>일자</th>
+            <th className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder}`}>
+              일자
+            </th>
             <th className={`whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>
               서류종류
             </th>
@@ -141,7 +143,7 @@ function FormsBoardTable({
               return (
                 <tr key={row.id} className="hover:bg-zinc-50/80">
                   <td
-                    className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}
+                    className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass}`}
                   >
                     <Link
                       href={`/forms/${row.id}`}
@@ -152,7 +154,7 @@ function FormsBoardTable({
                     </Link>
                   </td>
                   <td
-                    className={`whitespace-nowrap px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}
+                    className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass}`}
                   >
                     {cellText(row.docDate)}
                   </td>
