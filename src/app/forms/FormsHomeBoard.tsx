@@ -320,7 +320,7 @@ export default function FormsHomeBoard({
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-zinc-200 bg-white px-3 py-2">
+      <section className="rounded-xl border border-black bg-white px-3 py-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-zinc-800">
           <label className="inline-flex min-w-0 items-center gap-1.5">
             <span className="shrink-0 font-medium text-zinc-600">서류종류</span>
