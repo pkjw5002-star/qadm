@@ -532,15 +532,6 @@ export default function FormsHomeBoard({
           </span>
           <button
             type="button"
-            onClick={() => void downloadSearchExcel()}
-            disabled={searchFiltered.length === 0}
-            className="shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
-            title="현재 검색결과 기준으로 다운로드"
-          >
-            엑셀 다운로드
-          </button>
-          <button
-            type="button"
             onClick={resetSearch}
             className="shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
           >
@@ -566,6 +557,15 @@ export default function FormsHomeBoard({
               {searchFiltered.length}건 숨김
             </span>
           ) : null}
+          <button
+            type="button"
+            onClick={() => void downloadSearchExcel()}
+            disabled={searchFiltered.length === 0}
+            className="ml-auto shrink-0 rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+            title="현재 검색결과 기준으로 다운로드"
+          >
+            엑셀 다운로드
+          </button>
         </div>
         {hideSearchResults ? null : (
           <FormsBoardTable
