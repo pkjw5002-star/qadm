@@ -24,6 +24,9 @@ import { urlsToPhotoRef } from "@/lib/photoRef";
 import { buildListSnapshot } from "@/lib/formListSnapshot";
 import type { FormType } from "@/generated/prisma/client";
 import { PRODUCT_CATEGORY_OPTIONS } from "@/lib/productCategory";
+import {
+  isDepartmentOwnerDirectId,
+} from "@/lib/departmentOwnerOption";
 
 const productCategorySchema = z.enum(PRODUCT_CATEGORY_OPTIONS);
 function revalidateAfterFormChange(formId: string) {
@@ -41,6 +44,27 @@ function listSnapshotField(
 ): Prisma.InputJsonValue | undefined {
   const snap = buildListSnapshot({ type, data, title, authorName, createdAt });
   return snap ? (snap as Prisma.InputJsonValue) : undefined;
+}
+
+async function resolveDepartmentOwnerLabel(
+  optionId: string,
+  directText: string | undefined
+): Promise<{ label: string } | { error: string }> {
+  if (isDepartmentOwnerDirectId(optionId)) {
+    const label = (directText ?? "").trim();
+    if (!label) {
+      return { error: "부서/담당자를 직접 입력해 주세요." };
+    }
+    return { label };
+  }
+  const opt = await prisma.departmentOwnerOption.findUnique({
+    where: { id: optionId },
+    select: { label: true },
+  });
+  if (!opt || opt.label.trim() === "기타") {
+    return { error: "부서/담당자 항목을 선택해 주세요." };
+  }
+  return { label: opt.label };
 }
 
 /** 빈 문자열·공백만 → undefined (탭 2~5 미작성 허용) */
@@ -178,6 +202,7 @@ const ComplaintReceiptSchema = z.object({
   productCategory: productCategorySchema,
   complaintProductName: z.string().min(1),
   departmentOwnerOptionId: z.string().min(1),
+  departmentAndOwnerDirect: z.string().optional(),
   customerInfo: z.string().min(1),
   productAndComplaint: z.string().min(1),
   productManufacturing: z.string().min(1),
@@ -202,6 +227,15 @@ const ComplaintReceiptSchema = z.object({
   recoveryProcessingContent: recoveryProcessingContentOptional,
   recoveryProcessingDetail: optionalTrimmedNonEmpty,
 }).superRefine((data, ctx) => {
+  if (isDepartmentOwnerDirectId(data.departmentOwnerOptionId)) {
+    if (!data.departmentAndOwnerDirect?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "부서/담당자를 직접 입력해 주세요.",
+        path: ["departmentAndOwnerDirect"],
+      });
+    }
+  }
   if (data.recoveryProcessingDate) {
     if (!data.recoveryProcessingContent) {
       ctx.addIssue({
@@ -681,6 +715,9 @@ export async function createFormAction(_: unknown, formData: FormData) {
     productCategory: String(formData.get("productCategory") ?? ""),
     complaintProductName: String(formData.get("complaintProductName") ?? ""),
     departmentOwnerOptionId: String(formData.get("departmentOwnerOptionId") ?? ""),
+    departmentAndOwnerDirect:
+      String(formData.get("departmentAndOwnerDirect") ?? "").trim() ||
+      undefined,
     customerInfo: String(formData.get("customerInfo") ?? ""),
     productAndComplaint: String(formData.get("productAndComplaint") ?? ""),
     productManufacturing: String(formData.get("productManufacturing") ?? ""),
@@ -773,11 +810,13 @@ export async function createFormAction(_: unknown, formData: FormData) {
   }
 
   if (parsed.data.type === "COMPLAINT") {
-    const opt = await prisma.departmentOwnerOption.findUnique({
-      where: { id: parsed.data.departmentOwnerOptionId },
-      select: { label: true },
-    });
-    if (!opt) return formActionFailure("부서/담당자 항목을 선택해 주세요.", formData);
+    const resolved = await resolveDepartmentOwnerLabel(
+      parsed.data.departmentOwnerOptionId,
+      parsed.data.departmentAndOwnerDirect
+    );
+    if ("error" in resolved) {
+      return formActionFailure(resolved.error, formData);
+    }
 
     const d = parsed.data;
 
@@ -788,7 +827,7 @@ export async function createFormAction(_: unknown, formData: FormData) {
         const merged = mergeComplaintPhotos(undefined, rawAttachments);
         const data = assembleComplaintFormData(
           d,
-          opt.label,
+          resolved.label,
           formNo,
           merged
         ) as Prisma.InputJsonValue;
@@ -1113,6 +1152,9 @@ function complaintFieldsFromFormData(formData: FormData) {
     departmentOwnerOptionId: String(
       formData.get("departmentOwnerOptionId") ?? ""
     ),
+    departmentAndOwnerDirect:
+      String(formData.get("departmentAndOwnerDirect") ?? "").trim() ||
+      undefined,
     customerInfo: String(formData.get("customerInfo") ?? ""),
     productAndComplaint: String(formData.get("productAndComplaint") ?? ""),
     productManufacturing: String(formData.get("productManufacturing") ?? ""),
@@ -1181,12 +1223,12 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
     | Record<string, unknown>
     | undefined;
 
-  const opt = await prisma.departmentOwnerOption.findUnique({
-    where: { id: parsed.data.departmentOwnerOptionId },
-    select: { label: true },
-  });
-  if (!opt) {
-    return formActionFailure("부서/담당자 항목을 선택해 주세요.", formData);
+  const resolved = await resolveDepartmentOwnerLabel(
+    parsed.data.departmentOwnerOptionId,
+    parsed.data.departmentAndOwnerDirect
+  );
+  if ("error" in resolved) {
+    return formActionFailure(resolved.error, formData);
   }
 
   const formNo = String(
@@ -1196,7 +1238,7 @@ export async function updateComplaintFormAction(_: unknown, formData: FormData) 
   const merged = mergeComplaintPhotos(existingComplaint ?? null, ph);
   const data = assembleComplaintFormData(
     parsed.data,
-    opt.label,
+    resolved.label,
     formNo,
     merged
   ) as Prisma.InputJsonValue;

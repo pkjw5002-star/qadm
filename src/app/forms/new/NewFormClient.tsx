@@ -60,8 +60,116 @@ import {
   isFormTypeKey,
   type FormTypeKey,
 } from "@/lib/formTypes";
+import {
+  DEPARTMENT_OWNER_DIRECT_ID,
+  isDepartmentOwnerDirectId,
+  selectableDepartmentOwnerOptions,
+} from "@/lib/departmentOwnerOption";
 
 type FormActionState = FormActionFailure | undefined;
+
+function DepartmentOwnerSelect({
+  options,
+  initialOptionId,
+  initialDirect,
+  canManageDepartmentOwners,
+}: {
+  options: { id: string; label: string }[];
+  initialOptionId: string;
+  initialDirect: string;
+  canManageDepartmentOwners: boolean;
+}) {
+  const choices = useMemo(
+    () => selectableDepartmentOwnerOptions(options),
+    [options]
+  );
+
+  const resolvedInitialId = useMemo(() => {
+    const match = choices.find((o) => o.id === initialOptionId);
+    if (match) return match.id;
+    if (initialOptionId || initialDirect.trim()) {
+      return DEPARTMENT_OWNER_DIRECT_ID;
+    }
+    return choices[0]?.id ?? DEPARTMENT_OWNER_DIRECT_ID;
+  }, [choices, initialOptionId, initialDirect]);
+
+  const resolvedInitialDirect = useMemo(() => {
+    const match = choices.find((o) => o.id === initialOptionId);
+    if (match) return "";
+    const t = initialDirect.trim();
+    return t === "기타" ? "" : t;
+  }, [choices, initialOptionId, initialDirect]);
+
+  const [optionId, setOptionId] = useState(resolvedInitialId);
+  const [direct, setDirect] = useState(resolvedInitialDirect);
+  const isDirect = isDepartmentOwnerDirectId(optionId);
+
+  if (choices.length === 0) {
+    return (
+      <div className="mt-1 space-y-1.5">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm">
+          목록 없음 — 직접입력으로 작성하세요.{" "}
+          {canManageDepartmentOwners ? (
+            <Link
+              href="/admin/department-owners"
+              className="font-medium underline"
+            >
+              관리자 설정
+            </Link>
+          ) : (
+            <span className="font-medium">관리자에게 등록을 요청하세요.</span>
+          )}
+        </div>
+        <input
+          type="hidden"
+          name="departmentOwnerOptionId"
+          value={DEPARTMENT_OWNER_DIRECT_ID}
+        />
+        <input
+          name="departmentAndOwnerDirect"
+          type="text"
+          required
+          value={direct}
+          onChange={(e) => setDirect(e.target.value)}
+          className="w-full min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
+          placeholder="부서 / 담당자 직접 입력"
+          autoComplete="off"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-1 space-y-1.5">
+      <select
+        name="departmentOwnerOptionId"
+        required
+        value={optionId}
+        onChange={(e) => setOptionId(e.target.value)}
+        className="w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
+      >
+        {choices.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+        <option value={DEPARTMENT_OWNER_DIRECT_ID}>직접입력</option>
+      </select>
+      {isDirect ? (
+        <input
+          name="departmentAndOwnerDirect"
+          type="text"
+          required
+          value={direct}
+          onChange={(e) => setDirect(e.target.value)}
+          className="w-full min-w-0 rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
+          placeholder="부서 / 담당자 직접 입력"
+          autoComplete="off"
+        />
+      ) : null}
+    </div>
+  );
+}
 
 export default function NewFormClient({
   departmentOwnerOptions,
@@ -539,40 +647,15 @@ export default function NewFormClient({
                           *
                         </span>
                       </span>
-                      {departmentOwnerOptions.length === 0 ? (
-                        <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm">
-                          목록 없음.{" "}
-                          {canManageDepartmentOwners ? (
-                            <Link
-                              href="/admin/department-owners"
-                              className="font-medium underline"
-                            >
-                              관리자 설정
-                            </Link>
-                          ) : (
-                            <span className="font-medium">
-                              관리자에게 등록을 요청하세요.
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <select
-                          name="departmentOwnerOptionId"
-                          required
-                          className="mt-1 w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-400 sm:rounded-xl sm:px-3 sm:py-2"
-                          defaultValue={
-                            complaintVals.departmentOwnerOptionId ||
-                            departmentOwnerOptions[0]?.id ||
-                            ""
-                          }
-                        >
-                          {departmentOwnerOptions.map((o) => (
-                            <option key={o.id} value={o.id}>
-                              {o.label}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                      <DepartmentOwnerSelect
+                        key={`dept-owner-${formRevision}`}
+                        options={departmentOwnerOptions}
+                        initialOptionId={
+                          complaintVals.departmentOwnerOptionId ?? ""
+                        }
+                        initialDirect={complaintVals.departmentAndOwner ?? ""}
+                        canManageDepartmentOwners={canManageDepartmentOwners}
+                      />
                     </label>
                   </div>
                   <p className="mt-1.5 text-xs text-zinc-500">

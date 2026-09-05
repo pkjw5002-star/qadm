@@ -9,6 +9,8 @@ export type ComplaintFormDefaults = Partial<{
   productCategory: ProductCategory | "";
   complaintProductName: string;
   departmentOwnerOptionId: string;
+  /** 직접입력 시 표시용 부서/담당자 텍스트 */
+  departmentAndOwner: string;
   customerInfo: string;
   productAndComplaint: string;
   productManufacturing: string;
@@ -106,6 +108,8 @@ export function complaintJsonToFormDefaults(data: unknown): ComplaintFormDefault
       r?.departmentOwnerOptionId != null
         ? String(r.departmentOwnerOptionId)
         : "",
+    departmentAndOwner:
+      r?.departmentAndOwner != null ? String(r.departmentAndOwner) : "",
     customerInfo: r?.customerInfo != null ? String(r.customerInfo) : "",
     productAndComplaint:
       r?.productAndComplaint != null ? String(r.productAndComplaint) : "",
