@@ -11,8 +11,10 @@ import {
 } from "@/lib/productCategory";
 import {
   FORM_READ_CHANGED_EVENT,
-  loadFormReadIds,
-  loadFormReadIdsLocal,
+  isFormNeedsAttention,
+  loadFormSeen,
+  loadFormSeenLocal,
+  type FormSeenMap,
 } from "@/lib/formReadStore";
 
 type SearchFilters = {
@@ -86,20 +88,28 @@ function matchesDateRange(
 
 function FormsBoardTable({
   rows,
-  readIds,
+  seen,
   emptyMessage,
+  showActivity,
 }: {
   rows: RecentBoardRow[];
-  readIds: Set<string>;
+  seen: FormSeenMap;
   emptyMessage: string;
+  showActivity?: boolean;
 }) {
   const cellBorder = "border-b border-zinc-200";
+  const colCount = showActivity ? 9 : 8;
 
   return (
     <div className="overflow-x-auto">
       <table className="min-w-[980px] w-full border-separate border-spacing-0 text-sm">
         <thead>
           <tr className="bg-zinc-100 text-center text-xs font-medium text-zinc-700">
+            {showActivity ? (
+              <th className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder}`}>
+                변동
+              </th>
+            ) : null}
             <th className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder}`}>
               NO
             </th>
@@ -124,7 +134,7 @@ function FormsBoardTable({
           {rows.length === 0 ? (
             <tr>
               <td
-                colSpan={8}
+                colSpan={colCount}
                 className="px-4 py-10 text-center text-sm text-zinc-500"
               >
                 {emptyMessage}
@@ -132,16 +142,36 @@ function FormsBoardTable({
             </tr>
           ) : (
             rows.map((row) => {
-              const read = readIds.has(row.id);
-              const rowClass = read
-                ? "font-normal text-zinc-500"
-                : "font-bold text-zinc-900";
-              const linkClass = read
-                ? "text-zinc-500 hover:text-zinc-700"
-                : "text-zinc-900 hover:text-sky-800";
+              const needsAttention = isFormNeedsAttention(
+                seen,
+                row.id,
+                row.updatedAtIso
+              );
+              const rowClass = needsAttention
+                ? "font-bold text-zinc-900"
+                : "font-normal text-zinc-500";
+              const linkClass = needsAttention
+                ? "text-zinc-900 hover:text-sky-800"
+                : "text-zinc-500 hover:text-zinc-700";
 
               return (
                 <tr key={row.id} className="hover:bg-zinc-50/80">
+                  {showActivity ? (
+                    <td
+                      className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass}`}
+                    >
+                      <span
+                        className={
+                          row.activityKind === "update"
+                            ? "text-sky-700"
+                            : "text-emerald-700"
+                        }
+                        title={row.activityLabel}
+                      >
+                        {row.activityLabel}
+                      </span>
+                    </td>
+                  ) : null}
                   <td
                     className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass}`}
                   >
@@ -206,44 +236,44 @@ export default function FormsHomeBoard({
   userId: string;
 }) {
   const [filters, setFilters] = useState<SearchFilters>(createDefaultFilters);
-  const [readIds, setReadIds] = useState<Set<string>>(() =>
-    loadFormReadIdsLocal(userId)
+  const [seen, setSeen] = useState<FormSeenMap>(() =>
+    loadFormSeenLocal(userId)
   );
   const pathname = usePathname();
 
-  const refreshReadIds = useCallback(() => {
-    void loadFormReadIds(userId).then(setReadIds);
+  const refreshSeen = useCallback(() => {
+    void loadFormSeen(userId).then(setSeen);
   }, [userId]);
 
   useEffect(() => {
-    refreshReadIds();
+    refreshSeen();
 
     const onReadChanged = (event: Event) => {
       const detail = (event as CustomEvent<{ userId: string }>).detail;
       if (detail?.userId !== userId) return;
-      setReadIds(loadFormReadIdsLocal(userId));
+      setSeen(loadFormSeenLocal(userId));
     };
 
     const onVisible = () => {
-      if (document.visibilityState === "visible") refreshReadIds();
+      if (document.visibilityState === "visible") refreshSeen();
     };
 
     window.addEventListener(FORM_READ_CHANGED_EVENT, onReadChanged);
-    window.addEventListener("focus", refreshReadIds);
-    window.addEventListener("pageshow", refreshReadIds);
+    window.addEventListener("focus", refreshSeen);
+    window.addEventListener("pageshow", refreshSeen);
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       window.removeEventListener(FORM_READ_CHANGED_EVENT, onReadChanged);
-      window.removeEventListener("focus", refreshReadIds);
-      window.removeEventListener("pageshow", refreshReadIds);
+      window.removeEventListener("focus", refreshSeen);
+      window.removeEventListener("pageshow", refreshSeen);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [userId, refreshReadIds]);
+  }, [userId, refreshSeen]);
 
   useEffect(() => {
-    if (pathname === "/forms") refreshReadIds();
-  }, [pathname, refreshReadIds]);
+    if (pathname === "/forms") refreshSeen();
+  }, [pathname, refreshSeen]);
 
   const searchFiltered = useMemo(() => {
     const typeQ = filters.formType;
@@ -273,11 +303,13 @@ export default function FormsHomeBoard({
 
   const recentUnreadRows = useMemo(() => {
     const { dateFrom, dateTo } = defaultDateRange();
-    return rows.filter((row) => {
-      if (readIds.has(row.id)) return false;
-      return matchesDateRange(row.docDateRaw, dateFrom, dateTo);
-    });
-  }, [rows, readIds]);
+    return rows
+      .filter((row) => {
+        if (!isFormNeedsAttention(seen, row.id, row.updatedAtIso)) return false;
+        return matchesDateRange(row.activityDateRaw, dateFrom, dateTo);
+      })
+      .sort((a, b) => b.updatedAtIso.localeCompare(a.updatedAtIso));
+  }, [rows, seen]);
 
   const resetSearch = () => setFilters(createDefaultFilters());
 
@@ -425,7 +457,7 @@ export default function FormsHomeBoard({
         </div>
         <FormsBoardTable
           rows={searchFiltered}
-          readIds={readIds}
+          seen={seen}
           emptyMessage={searchEmptyMessage}
         />
       </section>
@@ -436,11 +468,12 @@ export default function FormsHomeBoard({
         </div>
         <FormsBoardTable
           rows={recentUnreadRows}
-          readIds={readIds}
+          seen={seen}
+          showActivity
           emptyMessage={
             rows.length === 0
               ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
-              : "안 읽은 글이 없습니다."
+              : "확인할 신규·수정 서류가 없습니다."
           }
         />
       </section>

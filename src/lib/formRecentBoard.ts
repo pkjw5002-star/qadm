@@ -5,12 +5,21 @@ import {
   formatListDate,
 } from "@/lib/formListSnapshot";
 
+export type RecentBoardActivityKind = "create" | "update";
+
 export type RecentBoardRow = {
   id: string;
   no: string;
   docDate: string;
   /** YYYY-MM-DD or empty — 검색용 */
   docDateRaw: string;
+  /** form.updatedAt ISO — 읽음·최근게시판용 */
+  updatedAtIso: string;
+  /** 최근 변동일 YYYY-MM-DD */
+  activityDateRaw: string;
+  activityKind: RecentBoardActivityKind;
+  /** 예: 신규 / 수정 · 홍길동 · 2026. 9. 5. */
+  activityLabel: string;
   formType: FormTypeKey;
   formTypeLabel: string;
   author: string;
@@ -111,13 +120,47 @@ export function buildRecentBoardRow(params: {
   data: unknown;
   authorName: string;
   createdAt: Date;
+  updatedAt: Date;
+  lastChange?: {
+    action: string;
+    createdAt: Date;
+    actorName: string;
+  } | null;
 }): RecentBoardRow | null {
-  const { id, type, title, data, authorName, createdAt } = params;
+  const {
+    id,
+    type,
+    title,
+    data,
+    authorName,
+    createdAt,
+    updatedAt,
+    lastChange,
+  } = params;
   if (!(type in FORM_TYPE_LABEL)) return null;
   const formType = type as FormTypeKey;
   const formTypeLabel = FORM_TYPE_LABEL[formType];
   const author =
     type === "COMPLAINT" ? authorName : authorFromJson(data, type, authorName);
+
+  const updatedAtIso = updatedAt.toISOString();
+  const activityDateRaw = dateRaw(updatedAt) || dateRaw(createdAt);
+  const isUpdate =
+    lastChange?.action === "UPDATE" ||
+    updatedAt.getTime() - createdAt.getTime() > 60_000;
+  const activityKind: RecentBoardActivityKind = isUpdate ? "update" : "create";
+  const activityWhen = formatListDate(
+    lastChange?.createdAt ?? updatedAt
+  );
+  const activityLabel = isUpdate
+    ? `수정 · ${lastChange?.actorName?.trim() || "—"} · ${activityWhen}`
+    : "신규";
+  const activity = {
+    updatedAtIso,
+    activityDateRaw,
+    activityKind,
+    activityLabel,
+  };
 
   if (type === "COMPLAINT") {
     const root = data as {
@@ -145,6 +188,7 @@ export function buildRecentBoardRow(params: {
       Boolean(textOrEmpty(prod?.defectCauseAnalysis)) ||
       Boolean(textOrEmpty(lab?.causeAnalysis));
     return {
+      ...activity,
       id,
       no: formNoFromData(data, title, "complaint"),
       docDate: formatListDate(r?.date ?? createdAt),
@@ -181,6 +225,7 @@ export function buildRecentBoardRow(params: {
     const v = qi?.review;
     const rawDate = dateRaw(r?.date) || dateRaw(createdAt);
     return {
+      ...activity,
       id,
       no: formNoFromData(data, title, "qualityImprovement"),
       docDate: formatListDate(r?.date ?? createdAt),
@@ -240,6 +285,7 @@ export function buildRecentBoardRow(params: {
           !complaintListDateMissing(h?.plannedDateReason)
         : !complaintListDateMissing(h?.date);
     return {
+      ...activity,
       id,
       no: formNoFromData(data, title, branch),
       docDate: formatListDate(r?.date ?? createdAt),
@@ -272,6 +318,7 @@ export function buildRecentBoardRow(params: {
     const rr = root.suggestion?.reviewResult;
     const rawDate = dateRaw(p?.date) || dateRaw(createdAt);
     return {
+      ...activity,
       id,
       no: formNoFromData(data, title, "suggestion"),
       docDate: formatListDate(p?.date ?? createdAt),

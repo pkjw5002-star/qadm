@@ -64,15 +64,31 @@ export default async function FormsListContent({
   if (!isTypedList) {
     const forms = await prisma.form.findMany({
       where: undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
       take: 500,
       select: {
-        ...formListSelect,
+        id: true,
+        type: true,
+        title: true,
+        createdAt: true,
+        updatedAt: true,
         data: true,
+        createdBy: { select: { name: true } },
+        events: {
+          where: { action: { in: ["CREATE", "UPDATE"] } },
+          orderBy: { createdAt: "desc" as const },
+          take: 1,
+          select: {
+            action: true,
+            createdAt: true,
+            actor: { select: { name: true } },
+          },
+        },
       },
     });
 
     const homeRows = forms.flatMap((f) => {
+      const change = f.events[0];
       const row = buildRecentBoardRow({
         id: f.id,
         type: f.type,
@@ -80,6 +96,14 @@ export default async function FormsListContent({
         data: f.data,
         authorName: f.createdBy.name,
         createdAt: f.createdAt,
+        updatedAt: f.updatedAt,
+        lastChange: change
+          ? {
+              action: change.action,
+              createdAt: change.createdAt,
+              actorName: change.actor.name,
+            }
+          : null,
       });
       return row ? [row] : [];
     });

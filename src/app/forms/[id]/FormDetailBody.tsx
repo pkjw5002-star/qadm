@@ -1176,7 +1176,10 @@ export async function FormDetailBody({ id }: { id: string }) {
           <FormDetailComments formId={form.id} />
         </Suspense>
       </div>
-      <MarkFormReadOnMount formId={form.id} />
+      <MarkFormReadOnMount
+        formId={form.id}
+        formUpdatedAt={form.updatedAt.toISOString()}
+      />
     </div>
   );
 }
