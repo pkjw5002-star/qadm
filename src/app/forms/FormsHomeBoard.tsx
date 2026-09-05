@@ -89,13 +89,13 @@ function FormsBoardTable({
   readIds: Set<string>;
   emptyMessage: string;
 }) {
-  const cellBorder = "border-b border-r border-zinc-200 last:border-r-0";
+  const cellBorder = "border-b border-zinc-200";
 
   return (
     <div className="overflow-x-auto">
       <table className="min-w-[1080px] w-full border-separate border-spacing-0 text-sm">
         <thead>
-          <tr className="bg-zinc-100 text-left text-xs font-medium text-zinc-700">
+          <tr className="bg-zinc-100 text-center text-xs font-medium text-zinc-700">
             <th className={`min-w-[110px] whitespace-nowrap px-3 py-2.5 ${cellBorder}`}>
               NO
             </th>
@@ -379,7 +379,7 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 sm:px-5">
+        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-center sm:px-5">
           <h2 className="text-sm font-semibold text-white">검색 결과</h2>
         </div>
         <FormsBoardTable
@@ -390,7 +390,7 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 sm:px-5">
+        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-center sm:px-5">
           <h2 className="text-sm font-semibold text-white">최근게시판</h2>
         </div>
         <FormsBoardTable
