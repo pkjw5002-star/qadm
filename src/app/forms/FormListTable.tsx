@@ -68,6 +68,27 @@ function stickyTdClass(col: FormListColumn | undefined): string {
   return `sticky left-0 z-20 bg-white ${STICKY_NO_SHADOW} group-hover:bg-zinc-50 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-zinc-100`;
 }
 
+function isCenterAlignedColumn(col: FormListColumn | undefined): boolean {
+  if (!col) return false;
+  if (
+    col.variant === "no" ||
+    col.variant === "date" ||
+    col.variant === "comment"
+  ) {
+    return true;
+  }
+  return (
+    col.id === "productCategory" ||
+    col.id === "author" ||
+    col.id === "outsideAs" ||
+    col.id === "causeAnalysis"
+  );
+}
+
+function centerClass(col: FormListColumn | undefined): string {
+  return isCenterAlignedColumn(col) ? "text-center" : "";
+}
+
 type LayoutState = {
   widths: Record<string, number>;
   hidden: Record<string, boolean>;
@@ -695,6 +716,7 @@ export default function FormListTable({
                   const col = colById.get(id);
                   const variant = col?.variant ?? "text";
                   const sticky = stickyTdClass(col);
+                  const align = centerClass(col);
                   if (variant === "no") {
                     const label =
                       row.cells[id]?.trim() !== ""
@@ -703,7 +725,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className={`border-b border-zinc-100 px-1 py-2 align-top ${sticky}`}
+                        className={`border-b border-zinc-100 px-1 py-2 align-top ${align} ${sticky}`}
                       >
                         <Link
                           href={`/forms/${row.id}`}
@@ -721,7 +743,7 @@ export default function FormListTable({
                       return (
                         <td
                           key={id}
-                          className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${mutedClass} ${sticky}`}
+                          className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${align} ${mutedClass} ${sticky}`}
                         >
                           —
                         </td>
@@ -730,7 +752,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
+                        className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${align} ${bodyClass} ${sticky}`}
                       >
                         <div
                           className="line-clamp-2 break-words whitespace-pre-wrap"
@@ -747,7 +769,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
+                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${align} ${bodyClass} ${sticky}`}
                       >
                         <div className="truncate whitespace-nowrap" title={tip}>
                           {v}
@@ -765,7 +787,7 @@ export default function FormListTable({
                     return (
                       <td
                         key={id}
-                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
+                        className={`border-b border-zinc-100 px-1.5 py-2 align-top text-xs leading-snug ${align} ${bodyClass} ${sticky}`}
                       >
                         {href && v.trim() !== "" && v !== "—" ? (
                           <Link
@@ -794,7 +816,7 @@ export default function FormListTable({
                   return (
                     <td
                       key={id}
-                      className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${bodyClass} ${sticky}`}
+                      className={`border-b border-zinc-100 px-2 py-2 align-top text-xs leading-snug ${align} ${bodyClass} ${sticky}`}
                     >
                       {href ? (
                         <Link

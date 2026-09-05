@@ -193,7 +193,7 @@ function FormsBoardTable({
                     </td>
                   ) : null}
                   <td
-                    className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass} ${stickyTdNo}`}
+                    className={`w-px whitespace-nowrap px-2 py-2.5 text-center align-top ${cellBorder} ${rowClass} ${stickyTdNo}`}
                   >
                     <Link
                       href={`/forms/${row.id}`}
@@ -204,7 +204,7 @@ function FormsBoardTable({
                     </Link>
                   </td>
                   <td
-                    className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass}`}
+                    className={`w-px whitespace-nowrap px-2 py-2.5 text-center align-top ${cellBorder} ${rowClass}`}
                   >
                     {cellText(row.docDate)}
                   </td>
@@ -214,7 +214,7 @@ function FormsBoardTable({
                     {row.formTypeLabel}
                   </td>
                   <td
-                    className={`whitespace-nowrap px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}
+                    className={`whitespace-nowrap px-3 py-2.5 text-center align-top ${cellBorder} ${rowClass}`}
                   >
                     {cellText(row.productCategory)}
                   </td>
@@ -233,7 +233,9 @@ function FormsBoardTable({
                       {cellText(row.handlingContent)}
                     </div>
                   </td>
-                  <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
+                  <td
+                    className={`px-3 py-2.5 text-center align-top ${cellBorder} ${rowClass}`}
+                  >
                     <div className="line-clamp-3 break-words whitespace-pre-wrap">
                       {cellText(row.causeAnalysis)}
                     </div>
