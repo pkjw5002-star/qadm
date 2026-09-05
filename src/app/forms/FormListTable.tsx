@@ -60,7 +60,7 @@ function isNoColumn(col: FormListColumn | undefined): boolean {
 
 function stickyThClass(col: FormListColumn | undefined): string {
   if (!isNoColumn(col)) return "";
-  return `sticky left-0 z-30 bg-zinc-50 ${STICKY_NO_SHADOW} after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-zinc-200`;
+  return `sticky left-0 z-30 bg-zinc-50/95 ${STICKY_NO_SHADOW} after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-zinc-200`;
 }
 
 function stickyTdClass(col: FormListColumn | undefined): string {
@@ -169,8 +169,6 @@ export default function FormListTable({
   } | null>(null);
 
   const [panelOpen, setPanelOpen] = useState(false);
-  /** 열 헤더(제목) 클릭 시 해당 열 검색 입력 표시 */
-  const [searchOpenColId, setSearchOpenColId] = useState<string | null>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {}
   );
@@ -197,19 +195,6 @@ export default function FormListTable({
     () => Object.values(columnFilters).some((v) => v.trim() !== ""),
     [columnFilters]
   );
-
-  const searchPanelRef = useRef<HTMLTableHeaderCellElement | null>(null);
-  useEffect(() => {
-    if (searchOpenColId == null) return;
-    const onDocMouseDown = (e: MouseEvent) => {
-      const el = searchPanelRef.current;
-      if (el && !el.contains(e.target as Node)) {
-        setSearchOpenColId(null);
-      }
-    };
-    document.addEventListener("mousedown", onDocMouseDown);
-    return () => document.removeEventListener("mousedown", onDocMouseDown);
-  }, [searchOpenColId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -417,7 +402,6 @@ export default function FormListTable({
 
   const clearSearch = () => {
     setColumnFilters({});
-    setSearchOpenColId(null);
   };
 
   const labelFor = useCallback(
@@ -576,75 +560,48 @@ export default function FormListTable({
               />
             ))}
           </colgroup>
-          <thead className="sticky top-0 z-40 border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-600">
+          <thead className="sticky top-0 z-40 border-b border-zinc-200 bg-zinc-50/95 text-left text-xs font-medium text-zinc-600 backdrop-blur-sm">
             <tr>
               {visibleCols.map((id) => {
                 const col = colById.get(id);
+                const filterActive = Boolean(columnFilters[id]?.trim());
+                const filterControlClass = filterActive
+                  ? "border-sky-300 bg-sky-50/70 text-zinc-900 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.15)]"
+                  : "border-zinc-200/90 bg-white text-zinc-800";
                 return (
                 <th
                   key={id}
-                  ref={searchOpenColId === id ? searchPanelRef : undefined}
-                  className={`relative overflow-hidden px-2 py-2 align-top font-medium ${stickyThClass(col)}`}
+                  className={`relative overflow-hidden px-2 pb-2 pt-2 align-top font-medium ${stickyThClass(col)}`}
                 >
-                  <div className="relative z-20 min-w-0 overflow-hidden pr-4">
-                    <button
-                      type="button"
-                      className={`w-full min-w-0 rounded-md px-1 py-0.5 text-left hover:bg-zinc-200/80 ${
-                        columnFilters[id]?.trim()
-                          ? "text-sky-800"
-                          : "text-zinc-700"
+                  <div className="relative z-20 min-w-0 overflow-hidden pr-3">
+                    <div
+                      className={`truncate text-[11px] font-semibold tracking-tight ${
+                        filterActive ? "text-sky-800" : "text-zinc-600"
                       }`}
-                      title={
-                        col?.filterOptions
-                          ? "클릭하여 이 열에서 선택 검색"
-                          : "클릭하여 이 열에서 검색 (부분 일치)"
-                      }
-                      onClick={() =>
-                        setSearchOpenColId((cur) => (cur === id ? null : id))
-                      }
+                      title={labelFor(id)}
                     >
-                      <span className="flex max-w-full items-baseline gap-1">
-                        <span
-                          className="min-w-0 truncate whitespace-nowrap"
-                          title={labelFor(id)}
-                        >
-                          {labelFor(id)}
-                        </span>
-                        {columnFilters[id]?.trim() ? (
-                          <span
-                            className="shrink-0 text-[10px] font-normal text-sky-600"
-                            aria-hidden
-                          >
-                            ●
-                          </span>
-                        ) : null}
-                      </span>
-                    </button>
-                    {searchOpenColId === id ? (
-                      col?.filterOptions ? (
-                        <select
-                          value={columnFilters[id] ?? ""}
-                          onChange={(e) =>
-                            setColumnFilters((prev) => ({
-                              ...prev,
-                              [id]: e.target.value,
-                            }))
-                          }
-                          className="mt-1 box-border w-full min-w-0 max-w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-normal text-zinc-900 outline-none focus:border-sky-400"
-                          autoFocus
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => {
-                            if (e.key === "Escape") setSearchOpenColId(null);
-                          }}
-                        >
-                          <option value="">전체</option>
-                          {col.filterOptions.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
+                      {labelFor(id)}
+                    </div>
+                    {col?.filterOptions ? (
+                      <select
+                        value={columnFilters[id] ?? ""}
+                        onChange={(e) =>
+                          setColumnFilters((prev) => ({
+                            ...prev,
+                            [id]: e.target.value,
+                          }))
+                        }
+                        aria-label={`${labelFor(id)} 검색`}
+                        className={`mt-1.5 box-border w-full min-w-0 max-w-full appearance-none rounded-md border px-1.5 py-1 text-[11px] font-normal outline-none transition focus:border-sky-400 focus:bg-white focus:ring-1 focus:ring-sky-200 ${filterControlClass}`}
+                      >
+                        <option value="">전체</option>
+                        {col.filterOptions.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
                       <input
                         type="search"
                         value={columnFilters[id] ?? ""}
@@ -656,15 +613,10 @@ export default function FormListTable({
                         }
                         placeholder="검색"
                         size={1}
-                        className="mt-1 box-border w-full min-w-0 max-w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-normal text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-sky-400"
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Escape") setSearchOpenColId(null);
-                        }}
+                        aria-label={`${labelFor(id)} 검색`}
+                        className={`mt-1.5 box-border w-full min-w-0 max-w-full rounded-md border px-1.5 py-1 text-[11px] font-normal placeholder:text-zinc-400 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-1 focus:ring-sky-200 ${filterControlClass}`}
                       />
-                      )
-                    ) : null}
+                    )}
                   </div>
                   <div
                     role="separator"
