@@ -262,29 +262,17 @@ export default function FormsHomeBoard({
 
   const resetSearch = () => setFilters(createDefaultFilters());
 
-  const appliedDateRange = useMemo(
-    () => effectiveDateRange(filters),
-    [filters.dateFrom, filters.dateTo]
-  );
-
-  const datesAreDefault =
-    !filters.dateFrom.trim() && !filters.dateTo.trim();
-
   const searchEmptyMessage =
     rows.length === 0
       ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
       : "검색 조건에 맞는 서식이 없습니다.";
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-zinc-900">검색항목</h2>
-        <p className="mt-0.5 text-xs text-zinc-500">
-          일자를 비우면 최근 6개월 기준으로 조회합니다.
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:items-end">
-          <label className="block min-w-0">
-            <span className="text-xs font-medium text-zinc-600">서류종류</span>
+    <div className="space-y-4">
+      <section className="rounded-xl border border-zinc-200 bg-white px-3 py-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-zinc-800">
+          <label className="inline-flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 font-medium text-zinc-600">서류종류</span>
             <select
               value={filters.formType}
               onChange={(e) =>
@@ -293,7 +281,7 @@ export default function FormsHomeBoard({
                   formType: e.target.value as SearchFilters["formType"],
                 }))
               }
-              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
+              className="min-w-[7rem] rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs outline-none focus:border-zinc-400"
             >
               <option value="">전체</option>
               {FORM_TYPES.map((t) => (
@@ -303,37 +291,30 @@ export default function FormsHomeBoard({
               ))}
             </select>
           </label>
-          <label className="block min-w-0 sm:col-span-2 lg:col-span-2">
-            <span className="text-xs font-medium text-zinc-600">일자</span>
-            <div className="mt-1 flex min-w-0 items-center gap-2">
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) =>
-                  setFilters((f) => ({ ...f, dateFrom: e.target.value }))
-                }
-                aria-label="시작일"
-                className="min-w-0 flex-1 rounded-xl border border-zinc-200 px-2 py-2 text-sm outline-none focus:border-zinc-400"
-              />
-              <span className="shrink-0 text-xs text-zinc-500">~</span>
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) =>
-                  setFilters((f) => ({ ...f, dateTo: e.target.value }))
-                }
-                aria-label="종료일"
-                className="min-w-0 flex-1 rounded-xl border border-zinc-200 px-2 py-2 text-sm outline-none focus:border-zinc-400"
-              />
-            </div>
-            {datesAreDefault ? (
-              <p className="mt-1 text-[11px] text-zinc-400">
-                {appliedDateRange.from} ~ {appliedDateRange.to} (6개월)
-              </p>
-            ) : null}
-          </label>
-          <label className="block min-w-0">
-            <span className="text-xs font-medium text-zinc-600">제품구분</span>
+          <div className="inline-flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 font-medium text-zinc-600">일자</span>
+            <input
+              type="date"
+              value={filters.dateFrom}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, dateFrom: e.target.value }))
+              }
+              aria-label="시작일"
+              className="rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
+            />
+            <span className="text-zinc-400">~</span>
+            <input
+              type="date"
+              value={filters.dateTo}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, dateTo: e.target.value }))
+              }
+              aria-label="종료일"
+              className="rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
+            />
+          </div>
+          <label className="inline-flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 font-medium text-zinc-600">제품구분</span>
             <select
               value={filters.productCategory}
               onChange={(e) =>
@@ -343,7 +324,7 @@ export default function FormsHomeBoard({
                     .value as SearchFilters["productCategory"],
                 }))
               }
-              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
+              className="min-w-[6rem] rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs outline-none focus:border-zinc-400"
             >
               <option value="">전체</option>
               {PRODUCT_CATEGORY_OPTIONS.map((cat) => (
@@ -353,51 +334,46 @@ export default function FormsHomeBoard({
               ))}
             </select>
           </label>
-          <label className="block min-w-0">
-            <span className="text-xs font-medium text-zinc-600">발행자</span>
+          <label className="inline-flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 font-medium text-zinc-600">발행자</span>
             <input
               type="search"
               value={filters.author}
               onChange={(e) =>
                 setFilters((f) => ({ ...f, author: e.target.value }))
               }
-              placeholder="작성자 검색"
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+              placeholder="작성자"
+              className="w-28 rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
             />
           </label>
-          <label className="block min-w-0 sm:col-span-2 lg:col-span-1">
-            <span className="text-xs font-medium text-zinc-600">내용</span>
+          <label className="inline-flex min-w-0 flex-1 items-center gap-1.5">
+            <span className="shrink-0 font-medium text-zinc-600">내용</span>
             <input
               type="search"
               value={filters.content}
               onChange={(e) =>
                 setFilters((f) => ({ ...f, content: e.target.value }))
               }
-              placeholder="내용·제품명 검색"
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+              placeholder="내용·제품명"
+              className="min-w-[8rem] flex-1 rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-zinc-400"
             />
           </label>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-xs text-zinc-500">
-            검색 결과 {searchFiltered.length}건
-          </p>
+          <span className="shrink-0 text-zinc-500">
+            {searchFiltered.length}건
+          </span>
           <button
             type="button"
             onClick={resetSearch}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            className="shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            검색 초기화
+            초기화
           </button>
         </div>
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
+        <div className="border-b border-zinc-200 px-4 py-2 sm:px-5">
           <h2 className="text-sm font-semibold text-zinc-900">검색 결과</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">
-            읽은 글은 옅은 회색, 안 읽은 글은 굵은 검정으로 표시됩니다.
-          </p>
         </div>
         <FormsBoardTable
           rows={searchFiltered}
@@ -407,11 +383,8 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
+        <div className="border-b border-zinc-200 px-4 py-2 sm:px-5">
           <h2 className="text-sm font-semibold text-zinc-900">최근게시판</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">
-            최근 6개월 안 읽은 글만 표시됩니다.
-          </p>
         </div>
         <FormsBoardTable
           rows={recentUnreadRows}

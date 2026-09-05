@@ -9,16 +9,9 @@ export default function FormsTableSkeleton({ type }: SkeletonProps) {
 
   if (isHome) {
     return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <div className="h-4 w-20 animate-pulse rounded bg-zinc-200" />
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-            <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
-            <div className="h-10 animate-pulse rounded-xl bg-zinc-100 sm:col-span-2 lg:col-span-2" />
-            <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
-            <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
-            <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
-          </div>
+      <div className="space-y-4">
+        <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2">
+          <div className="h-7 animate-pulse rounded-lg bg-zinc-100" />
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-2">
           {Array.from({ length: 8 }).map((_, i) => (
