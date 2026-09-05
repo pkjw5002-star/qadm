@@ -575,8 +575,8 @@ export default function FormListTable({
                 >
                   <div className="relative z-20 min-w-0 overflow-hidden pr-3">
                     <div
-                      className={`truncate text-[11px] font-semibold tracking-tight ${
-                        filterActive ? "text-sky-800" : "text-zinc-600"
+                      className={`truncate text-center text-sm font-semibold tracking-tight ${
+                        filterActive ? "text-sky-800" : "text-zinc-700"
                       }`}
                       title={labelFor(id)}
                     >
