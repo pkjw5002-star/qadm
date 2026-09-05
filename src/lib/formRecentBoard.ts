@@ -17,8 +17,12 @@ export type RecentBoardRow = {
   updatedAtIso: string;
   /** 최근 변동일 YYYY-MM-DD */
   activityDateRaw: string;
+  /** 표시용 변동일 */
+  activityDateLabel: string;
   activityKind: RecentBoardActivityKind;
-  /** 예: 신규 / 수정 · 홍길동 · 2026. 9. 5. */
+  /** 변동내역 (신규 / 수정 · 작성자) */
+  activityDetail: string;
+  /** 예: 변동일 + 내역 — 툴팁용 */
   activityLabel: string;
   formType: FormTypeKey;
   formTypeLabel: string;
@@ -149,16 +153,19 @@ export function buildRecentBoardRow(params: {
     lastChange?.action === "UPDATE" ||
     updatedAt.getTime() - createdAt.getTime() > 60_000;
   const activityKind: RecentBoardActivityKind = isUpdate ? "update" : "create";
-  const activityWhen = formatListDate(
+  const activityDateLabel = formatListDate(
     lastChange?.createdAt ?? updatedAt
   );
-  const activityLabel = isUpdate
-    ? `수정 · ${lastChange?.actorName?.trim() || "—"} · ${activityWhen}`
+  const activityDetail = isUpdate
+    ? `수정 · ${lastChange?.actorName?.trim() || "—"}`
     : "신규";
+  const activityLabel = `${activityDateLabel} · ${activityDetail}`;
   const activity = {
     updatedAtIso,
     activityDateRaw,
+    activityDateLabel,
     activityKind,
+    activityDetail,
     activityLabel,
   };
 

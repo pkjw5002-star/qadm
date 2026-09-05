@@ -101,10 +101,10 @@ function FormsBoardTable({
   const colCount = showActivity ? 9 : 8;
   const stickyShadow = "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]";
   const stickyThNo = showActivity
-    ? `sticky left-[9.5rem] z-30 bg-zinc-100 ${stickyShadow}`
+    ? `sticky left-[8.5rem] z-30 bg-zinc-100 ${stickyShadow}`
     : `sticky left-0 z-30 bg-zinc-100 ${stickyShadow}`;
   const stickyTdNo = showActivity
-    ? `sticky left-[9.5rem] z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`
+    ? `sticky left-[8.5rem] z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`
     : `sticky left-0 z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
   const stickyThActivity = `sticky left-0 z-30 bg-zinc-100 ${stickyShadow}`;
   const stickyTdActivity = `sticky left-0 z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
@@ -116,7 +116,7 @@ function FormsBoardTable({
           <tr className="bg-zinc-100 text-center text-xs font-medium text-zinc-700">
             {showActivity ? (
               <th
-                className={`w-[9.5rem] max-w-[9.5rem] whitespace-nowrap px-2 py-2.5 ${cellBorder} ${stickyThActivity}`}
+                className={`w-[8.5rem] max-w-[8.5rem] whitespace-nowrap px-2 py-2.5 ${cellBorder} ${stickyThActivity}`}
               >
                 변동
               </th>
@@ -171,18 +171,25 @@ function FormsBoardTable({
                 <tr key={row.id} className="group hover:bg-zinc-50/80">
                   {showActivity ? (
                     <td
-                      className={`w-[9.5rem] max-w-[9.5rem] px-2 py-2.5 align-top ${cellBorder} ${rowClass} ${stickyTdActivity}`}
+                      className={`w-[8.5rem] max-w-[8.5rem] px-2 py-2.5 align-top ${cellBorder} ${stickyTdActivity}`}
                     >
-                      <span
-                        className={`block truncate ${
-                          row.activityKind === "update"
-                            ? "text-sky-700"
-                            : "text-emerald-700"
-                        }`}
+                      <div
+                        className="space-y-0.5 text-left text-xs leading-snug"
                         title={row.activityLabel}
                       >
-                        {row.activityLabel}
-                      </span>
+                        <div className="whitespace-nowrap font-medium text-zinc-700">
+                          {row.activityDateLabel}
+                        </div>
+                        <div
+                          className={`truncate ${
+                            row.activityKind === "update"
+                              ? "font-semibold text-sky-700"
+                              : "font-semibold text-emerald-700"
+                          }`}
+                        >
+                          {row.activityDetail}
+                        </div>
+                      </div>
                     </td>
                   ) : null}
                   <td
