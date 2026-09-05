@@ -99,18 +99,31 @@ function FormsBoardTable({
 }) {
   const cellBorder = "border-b border-zinc-200";
   const colCount = showActivity ? 9 : 8;
+  const stickyShadow = "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]";
+  const stickyThNo = showActivity
+    ? `sticky left-[9.5rem] z-30 bg-zinc-100 ${stickyShadow}`
+    : `sticky left-0 z-30 bg-zinc-100 ${stickyShadow}`;
+  const stickyTdNo = showActivity
+    ? `sticky left-[9.5rem] z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`
+    : `sticky left-0 z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
+  const stickyThActivity = `sticky left-0 z-30 bg-zinc-100 ${stickyShadow}`;
+  const stickyTdActivity = `sticky left-0 z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
 
   return (
-    <div className="overflow-x-auto">
+    <div className="relative max-h-[min(70vh,720px)] overflow-auto overscroll-contain">
       <table className="min-w-[980px] w-full border-separate border-spacing-0 text-sm">
-        <thead>
+        <thead className="sticky top-0 z-40 bg-zinc-100">
           <tr className="bg-zinc-100 text-center text-xs font-medium text-zinc-700">
             {showActivity ? (
-              <th className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder}`}>
+              <th
+                className={`w-[9.5rem] max-w-[9.5rem] whitespace-nowrap px-2 py-2.5 ${cellBorder} ${stickyThActivity}`}
+              >
                 변동
               </th>
             ) : null}
-            <th className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder}`}>
+            <th
+              className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder} ${stickyThNo}`}
+            >
               NO
             </th>
             <th className={`w-px whitespace-nowrap px-2 py-2.5 ${cellBorder}`}>
@@ -155,17 +168,17 @@ function FormsBoardTable({
                 : "text-zinc-500 hover:text-zinc-700";
 
               return (
-                <tr key={row.id} className="hover:bg-zinc-50/80">
+                <tr key={row.id} className="group hover:bg-zinc-50/80">
                   {showActivity ? (
                     <td
-                      className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass}`}
+                      className={`w-[9.5rem] max-w-[9.5rem] px-2 py-2.5 align-top ${cellBorder} ${rowClass} ${stickyTdActivity}`}
                     >
                       <span
-                        className={
+                        className={`block truncate ${
                           row.activityKind === "update"
                             ? "text-sky-700"
                             : "text-emerald-700"
-                        }
+                        }`}
                         title={row.activityLabel}
                       >
                         {row.activityLabel}
@@ -173,7 +186,7 @@ function FormsBoardTable({
                     </td>
                   ) : null}
                   <td
-                    className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass}`}
+                    className={`w-px whitespace-nowrap px-2 py-2.5 align-top ${cellBorder} ${rowClass} ${stickyTdNo}`}
                   >
                     <Link
                       href={`/forms/${row.id}`}
