@@ -256,6 +256,7 @@ export default function FormsHomeBoard({
   userId: string;
 }) {
   const [filters, setFilters] = useState<SearchFilters>(createDefaultFilters);
+  const [hideSearchResults, setHideSearchResults] = useState(false);
   const [seen, setSeen] = useState<FormSeenMap>(() =>
     loadFormSeenLocal(userId)
   );
@@ -472,14 +473,30 @@ export default function FormsHomeBoard({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-left sm:px-5">
+        <div className="flex items-center gap-3 border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-left sm:px-5">
           <h2 className="pl-[2ch] text-sm font-semibold text-white">검색 결과</h2>
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-white/30 bg-white/10 px-2 py-0.5 text-xs text-white hover:bg-white/15">
+            <input
+              type="checkbox"
+              checked={hideSearchResults}
+              onChange={(e) => setHideSearchResults(e.target.checked)}
+              className="size-3.5 accent-white"
+            />
+            전체 숨기기
+          </label>
+          {hideSearchResults ? (
+            <span className="text-xs text-zinc-300">
+              {searchFiltered.length}건 숨김
+            </span>
+          ) : null}
         </div>
-        <FormsBoardTable
-          rows={searchFiltered}
-          seen={seen}
-          emptyMessage={searchEmptyMessage}
-        />
+        {hideSearchResults ? null : (
+          <FormsBoardTable
+            rows={searchFiltered}
+            seen={seen}
+            emptyMessage={searchEmptyMessage}
+          />
+        )}
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white">
