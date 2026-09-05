@@ -45,8 +45,10 @@ const formListSelect = {
 
 export default async function FormsListContent({
   type,
+  view = "all",
 }: {
   type?: FormTypeKey;
+  view?: "all" | "recent";
 }) {
   const user = await requireUser();
   const isComplaintList = type === "COMPLAINT";
@@ -108,7 +110,7 @@ export default async function FormsListContent({
       return row ? [row] : [];
     });
 
-    return <FormsHomeBoard rows={homeRows} userId={user.id} />;
+    return <FormsHomeBoard rows={homeRows} userId={user.id} mode={view} />;
   }
 
   const forms = await prisma.form.findMany({

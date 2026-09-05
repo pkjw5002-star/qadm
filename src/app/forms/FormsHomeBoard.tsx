@@ -263,9 +263,11 @@ function FormsBoardTable({
 export default function FormsHomeBoard({
   rows,
   userId,
+  mode = "all",
 }: {
   rows: RecentBoardRow[];
   userId: string;
+  mode?: "all" | "recent";
 }) {
   const [filters, setFilters] = useState<SearchFilters>(createDefaultFilters);
   const [hideSearchResults, setHideSearchResults] = useState(false);
@@ -353,6 +355,8 @@ export default function FormsHomeBoard({
 
   return (
     <div className="space-y-4">
+      {mode === "all" ? (
+        <>
       <section className="rounded-xl border border-black bg-white px-3 py-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-zinc-800">
           <label className="inline-flex min-w-0 items-center gap-1.5">
@@ -510,10 +514,13 @@ export default function FormsHomeBoard({
           />
         )}
       </section>
+        </>
+      ) : null}
 
+      {mode === "recent" ? (
       <section className="rounded-2xl border border-zinc-200 bg-white">
         <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-left sm:px-5">
-          <h2 className="pl-[2ch] text-sm font-semibold text-white">최근게시판</h2>
+          <h2 className="pl-[2ch] text-sm font-semibold text-white">최근게시글</h2>
         </div>
         <FormsBoardTable
           rows={recentUnreadRows}
@@ -526,6 +533,7 @@ export default function FormsHomeBoard({
           }
         />
       </section>
+      ) : null}
     </div>
   );
 }
