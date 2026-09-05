@@ -605,7 +605,7 @@ export default function FormListTable({
                           }));
                         }}
                         aria-label={`${labelFor(id)} 검색`}
-                        className={`mt-1.5 box-border w-full min-w-0 max-w-full appearance-none rounded-md border px-1.5 py-1 text-sm font-normal outline-none transition focus:border-sky-400 focus:bg-white focus:ring-1 focus:ring-sky-200 ${filterControlClass}`}
+                        className={`mt-1.5 box-border w-full min-w-0 max-w-full appearance-none rounded-md border px-1.5 py-1 text-xs font-normal outline-none transition focus:border-sky-400 focus:bg-white focus:ring-1 focus:ring-sky-200 ${filterControlClass}`}
                       >
                         {col.filterExternal ? null : (
                           <option value="">전체</option>
@@ -632,7 +632,7 @@ export default function FormListTable({
                         placeholder="검색"
                         size={1}
                         aria-label={`${labelFor(id)} 검색`}
-                        className={`mt-1.5 box-border w-full min-w-0 max-w-full rounded-md border px-1.5 py-1 text-sm font-normal placeholder:text-zinc-400 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-1 focus:ring-sky-200 ${filterControlClass}`}
+                        className={`mt-1.5 box-border w-full min-w-0 max-w-full rounded-md border px-1.5 py-1 text-xs font-normal placeholder:text-zinc-400 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-1 focus:ring-sky-200 ${filterControlClass}`}
                       />
                     )}
                   </div>
