@@ -17,6 +17,7 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
     defaultWidth: 104,
     minWidth: 80,
     variant: "date",
+    hideSearch: true,
   },
   {
     id: "customerInfo",

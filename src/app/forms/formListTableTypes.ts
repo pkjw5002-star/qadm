@@ -13,6 +13,8 @@ export type FormListColumn = {
   variant: FormListColumnVariant;
   /** 있으면 열 검색을 텍스트 입력 대신 선택으로 표시 */
   filterOptions?: readonly string[];
+  /** true면 열 헤더 검색창을 숨김 (툴바 등에서 별도 필터) */
+  hideSearch?: boolean;
 };
 
 export type FormListRow = {

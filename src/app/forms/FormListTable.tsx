@@ -577,12 +577,12 @@ export default function FormListTable({
                     <div
                       className={`truncate text-center text-xs font-medium tracking-tight ${
                         filterActive ? "text-sky-800" : "text-zinc-600"
-                      }`}
+                      } ${col?.hideSearch ? "py-1.5" : ""}`}
                       title={labelFor(id)}
                     >
                       {labelFor(id)}
                     </div>
-                    {col?.filterOptions ? (
+                    {col?.hideSearch ? null : col?.filterOptions ? (
                       <select
                         value={columnFilters[id] ?? ""}
                         onChange={(e) =>
