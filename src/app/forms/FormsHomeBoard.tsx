@@ -62,6 +62,24 @@ function cellText(v: string): string {
   return t !== "" && t !== "—" ? t : "—";
 }
 
+function ClampedCell({
+  value,
+  className = "",
+}: {
+  value: string;
+  className?: string;
+}) {
+  const display = cellText(value);
+  return (
+    <div
+      className={`line-clamp-2 break-words whitespace-pre-wrap ${className}`}
+      title={display !== "—" ? display : undefined}
+    >
+      {display}
+    </div>
+  );
+}
+
 function effectiveDateRange(filters: SearchFilters): {
   from: string;
   to: string;
@@ -219,26 +237,18 @@ function FormsBoardTable({
                     {cellText(row.productCategory)}
                   </td>
                   <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
-                    <div className="line-clamp-2 break-words whitespace-pre-wrap">
-                      {cellText(row.productName)}
-                    </div>
+                    <ClampedCell value={row.productName} />
                   </td>
                   <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
-                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                      {cellText(row.content)}
-                    </div>
+                    <ClampedCell value={row.content} />
                   </td>
                   <td className={`px-3 py-2.5 align-top ${cellBorder} ${rowClass}`}>
-                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                      {cellText(row.handlingContent)}
-                    </div>
+                    <ClampedCell value={row.handlingContent} />
                   </td>
                   <td
                     className={`px-3 py-2.5 text-center align-top ${cellBorder} ${rowClass}`}
                   >
-                    <div className="line-clamp-3 break-words whitespace-pre-wrap">
-                      {cellText(row.causeAnalysis)}
-                    </div>
+                    <ClampedCell value={row.causeAnalysis} />
                   </td>
                 </tr>
               );
