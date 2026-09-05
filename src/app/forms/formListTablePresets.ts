@@ -139,18 +139,18 @@ export const ABNORMAL_REPORT_LIST_STORAGE_KEY =
 export const ABNORMAL_REPORT_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
   {
-    id: "author",
-    label: "작성자",
-    defaultWidth: 104,
-    minWidth: 80,
-    variant: "text",
-  },
-  {
     id: "reportDate",
     label: "신고일자",
     defaultWidth: 104,
     minWidth: 80,
     variant: "date",
+  },
+  {
+    id: "author",
+    label: "작성자",
+    defaultWidth: 104,
+    minWidth: 80,
+    variant: "text",
   },
   {
     id: "itemSpec",
@@ -208,18 +208,18 @@ export const WORK_COOP_LIST_STORAGE_KEY = "qadm-work-coop-list-table-v5";
 export const WORK_COOP_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
   {
-    id: "author",
-    label: "작성자",
-    defaultWidth: 104,
-    minWidth: 80,
-    variant: "text",
-  },
-  {
     id: "reportDate",
     label: "요청일자",
     defaultWidth: 104,
     minWidth: 80,
     variant: "date",
+  },
+  {
+    id: "author",
+    label: "작성자",
+    defaultWidth: 104,
+    minWidth: 80,
+    variant: "text",
   },
   {
     id: "itemSpec",
