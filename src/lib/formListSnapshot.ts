@@ -1,7 +1,7 @@
 import type { FormType } from "@/generated/prisma/client";
 import type { FormListRow } from "@/app/forms/formListTableTypes";
 
-export const LIST_SNAPSHOT_VERSION = 4;
+export const LIST_SNAPSHOT_VERSION = 5;
 
 export type StoredListSnapshot =
   | {
@@ -333,7 +333,7 @@ export function buildListSnapshot(params: {
     const missingRecoveryDate = complaintListDateMissing(row.recoveryDate);
     const recoveredWithoutCauseAnalysisDate =
       !missingRecoveryDate && complaintListDateMissing(row.causeAnalysisDate);
-    const highlightPending = complaintListDateMissing(row.causeAnalysisDate);
+    const highlightPending = row.causeAnalysisStatus !== "완료";
     const no = String(row.no).trim() !== "" ? String(row.no) : "—";
 
     const cellHref: Partial<Record<string, string>> = {};
