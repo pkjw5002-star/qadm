@@ -91,15 +91,16 @@ function FormsBoardTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-[1000px] w-full border-separate border-spacing-0 text-sm">
+      <table className="min-w-[1080px] w-full border-separate border-spacing-0 text-sm">
         <thead>
           <tr className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
             <th className="min-w-[110px] whitespace-nowrap px-3 py-2.5">NO</th>
             <th className="whitespace-nowrap px-3 py-2.5">일자</th>
             <th className="whitespace-nowrap px-3 py-2.5">서류종류</th>
+            <th className="whitespace-nowrap px-3 py-2.5">제품구분</th>
             <th className="min-w-[120px] px-3 py-2.5">제품명</th>
             <th className="min-w-[180px] px-3 py-2.5">내용</th>
-            <th className="min-w-[140px] px-3 py-2.5">원인분석</th>
+            <th className="min-w-[140px] px-3 py-2.5">원인분석 및 처리</th>
             <th className="min-w-[140px] px-3 py-2.5">처리내용</th>
           </tr>
         </thead>
@@ -107,7 +108,7 @@ function FormsBoardTable({
           {rows.length === 0 ? (
             <tr>
               <td
-                colSpan={7}
+                colSpan={8}
                 className="px-4 py-10 text-center text-sm text-zinc-500"
               >
                 {emptyMessage}
@@ -148,6 +149,11 @@ function FormsBoardTable({
                     className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
                   >
                     {row.formTypeLabel}
+                  </td>
+                  <td
+                    className={`whitespace-nowrap px-3 py-2.5 align-top ${rowClass}`}
+                  >
+                    {cellText(row.productCategory)}
                   </td>
                   <td className={`px-3 py-2.5 align-top ${rowClass}`}>
                     <div className="line-clamp-2 break-words whitespace-pre-wrap">

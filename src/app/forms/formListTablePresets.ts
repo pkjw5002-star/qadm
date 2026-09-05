@@ -1,6 +1,13 @@
 import type { FormListColumn } from "./formListTableTypes";
+import { PRODUCT_CATEGORY_OPTIONS } from "@/lib/productCategory";
 
-export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v5";
+const PRODUCT_CATEGORY_FILTER = [
+  ...PRODUCT_CATEGORY_OPTIONS,
+] as const;
+
+const COMPLETE_STATUS_FILTER = ["완료", "미완료"] as const;
+
+export const COMPLAINT_FORM_LIST_STORAGE_KEY = "qadm-complaint-list-table-v6";
 
 export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -17,6 +24,14 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
     defaultWidth: 180,
     minWidth: 96,
     variant: "text",
+  },
+  {
+    id: "productCategory",
+    label: "제품구분",
+    defaultWidth: 100,
+    minWidth: 80,
+    variant: "text",
+    filterOptions: PRODUCT_CATEGORY_FILTER,
   },
   {
     id: "productName",
@@ -49,10 +64,11 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
   },
   {
     id: "causeAnalysis",
-    label: "원인분석",
-    defaultWidth: 104,
-    minWidth: 88,
+    label: "원인분석 및 처리",
+    defaultWidth: 120,
+    minWidth: 104,
     variant: "compact",
+    filterOptions: COMPLETE_STATUS_FILTER,
   },
   {
     id: "comment",
@@ -64,7 +80,7 @@ export const COMPLAINT_FORM_LIST_COLUMNS: FormListColumn[] = [
 ];
 
 export const QUALITY_IMPROVEMENT_LIST_STORAGE_KEY =
-  "qadm-quality-improvement-list-table-v5";
+  "qadm-quality-improvement-list-table-v6";
 
 export const QUALITY_IMPROVEMENT_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -81,6 +97,14 @@ export const QUALITY_IMPROVEMENT_LIST_COLUMNS: FormListColumn[] = [
     defaultWidth: 104,
     minWidth: 80,
     variant: "text",
+  },
+  {
+    id: "productCategory",
+    label: "제품구분",
+    defaultWidth: 100,
+    minWidth: 80,
+    variant: "text",
+    filterOptions: PRODUCT_CATEGORY_FILTER,
   },
   {
     id: "itemSpec",
@@ -134,7 +158,7 @@ export const QUALITY_IMPROVEMENT_LIST_COLUMNS: FormListColumn[] = [
 ];
 
 export const ABNORMAL_REPORT_LIST_STORAGE_KEY =
-  "qadm-abnormal-report-list-table-v5";
+  "qadm-abnormal-report-list-table-v6";
 
 export const ABNORMAL_REPORT_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -151,6 +175,14 @@ export const ABNORMAL_REPORT_LIST_COLUMNS: FormListColumn[] = [
     defaultWidth: 104,
     minWidth: 80,
     variant: "text",
+  },
+  {
+    id: "productCategory",
+    label: "제품구분",
+    defaultWidth: 100,
+    minWidth: 80,
+    variant: "text",
+    filterOptions: PRODUCT_CATEGORY_FILTER,
   },
   {
     id: "itemSpec",
@@ -203,7 +235,7 @@ export const ABNORMAL_REPORT_LIST_COLUMNS: FormListColumn[] = [
   },
 ];
 
-export const WORK_COOP_LIST_STORAGE_KEY = "qadm-work-coop-list-table-v5";
+export const WORK_COOP_LIST_STORAGE_KEY = "qadm-work-coop-list-table-v6";
 
 export const WORK_COOP_LIST_COLUMNS: FormListColumn[] = [
   { id: "no", label: "NO", defaultWidth: 72, minWidth: 48, variant: "no" },
@@ -220,6 +252,14 @@ export const WORK_COOP_LIST_COLUMNS: FormListColumn[] = [
     defaultWidth: 104,
     minWidth: 80,
     variant: "text",
+  },
+  {
+    id: "productCategory",
+    label: "제품구분",
+    defaultWidth: 100,
+    minWidth: 80,
+    variant: "text",
+    filterOptions: PRODUCT_CATEGORY_FILTER,
   },
   {
     id: "itemSpec",

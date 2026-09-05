@@ -11,6 +11,8 @@ export type FormListColumn = {
   defaultWidth: number;
   minWidth: number;
   variant: FormListColumnVariant;
+  /** 있으면 열 검색을 텍스트 입력 대신 선택으로 표시 */
+  filterOptions?: readonly string[];
 };
 
 export type FormListRow = {

@@ -111,9 +111,17 @@ function rowMatchesColumnFilters(
   for (const c of columns) {
     const raw = filters[c.id];
     if (raw === undefined || raw.trim() === "") continue;
-    const q = raw.trim().toLowerCase();
-    const hay = searchHaystack(row, c).toLowerCase();
-    if (!hay.includes(q)) return false;
+    const q = raw.trim();
+    const hay = searchHaystack(row, c).trim();
+    if (c.filterOptions) {
+      if (q === "미완료") {
+        if (hay === "완료") return false;
+        continue;
+      }
+      if (hay !== q) return false;
+      continue;
+    }
+    if (!hay.toLowerCase().includes(q.toLowerCase())) return false;
   }
   return true;
 }
@@ -586,7 +594,11 @@ export default function FormListTable({
                           ? "text-sky-800"
                           : "text-zinc-700"
                       }`}
-                      title="클릭하여 이 열에서 검색 (부분 일치)"
+                      title={
+                        col?.filterOptions
+                          ? "클릭하여 이 열에서 선택 검색"
+                          : "클릭하여 이 열에서 검색 (부분 일치)"
+                      }
                       onClick={() =>
                         setSearchOpenColId((cur) => (cur === id ? null : id))
                       }
@@ -609,6 +621,30 @@ export default function FormListTable({
                       </span>
                     </button>
                     {searchOpenColId === id ? (
+                      col?.filterOptions ? (
+                        <select
+                          value={columnFilters[id] ?? ""}
+                          onChange={(e) =>
+                            setColumnFilters((prev) => ({
+                              ...prev,
+                              [id]: e.target.value,
+                            }))
+                          }
+                          className="mt-1 box-border w-full min-w-0 max-w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-normal text-zinc-900 outline-none focus:border-sky-400"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") setSearchOpenColId(null);
+                          }}
+                        >
+                          <option value="">전체</option>
+                          {col.filterOptions.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
                       <input
                         type="search"
                         value={columnFilters[id] ?? ""}
@@ -627,6 +663,7 @@ export default function FormListTable({
                           if (e.key === "Escape") setSearchOpenColId(null);
                         }}
                       />
+                      )
                     ) : null}
                   </div>
                   <div

@@ -1,8 +1,7 @@
 import type { FormType } from "@/generated/prisma/client";
 import type { FormListRow } from "@/app/forms/formListTableTypes";
-import { formatProductWithCategory } from "@/lib/productCategory";
 
-export const LIST_SNAPSHOT_VERSION = 3;
+export const LIST_SNAPSHOT_VERSION = 4;
 
 export type StoredListSnapshot =
   | {
@@ -112,10 +111,8 @@ function complaintListRow(data: unknown, title: string) {
     no: formNo,
     receiptDate: r?.date,
     customerInfo: textOrDash(r?.customerInfo),
-    productName: formatProductWithCategory(
-      r?.productCategory,
-      r?.complaintProductName
-    ),
+    productCategory: textOrDash(r?.productCategory),
+    productName: textOrDash(r?.complaintProductName),
     departmentAndOwner: r?.departmentAndOwner,
     content,
     actionContent,
@@ -210,7 +207,8 @@ function abLikeListRow(
   return {
     no: formNo,
     reportDate: r?.date,
-    itemSpec: formatProductWithCategory(r?.productCategory, r?.itemSpec),
+    productCategory: textOrDash(r?.productCategory),
+    itemSpec: textOrDash(r?.itemSpec),
     problemAndRequest: textOrDash(r?.problemAndRequest),
     handlingDeptOwner: textOrDash(r?.handlingDepartmentOwner),
     handlingDate: h?.date,
@@ -289,7 +287,8 @@ function qualityImprovementListRow(data: unknown, title: string) {
 
   return {
     no: formNo,
-    itemSpec: formatProductWithCategory(r?.productCategory, r?.itemSpec),
+    productCategory: textOrDash(r?.productCategory),
+    itemSpec: textOrDash(r?.itemSpec),
     requestReason: textOrDash(r?.requestReasonDetails),
     reviewDeptOwner: textOrDash(r?.reviewDepartmentOwner),
     reviewDate: v?.date,
@@ -318,6 +317,10 @@ export function buildListSnapshot(params: {
 
   if (type === "COMPLAINT") {
     const row = complaintListRow(data, title);
+    const productCategoryLabel =
+      row.productCategory != null && String(row.productCategory).trim() !== ""
+        ? String(row.productCategory)
+        : "—";
     const productLabel =
       row.productName != null && String(row.productName).trim() !== ""
         ? String(row.productName)
@@ -348,6 +351,7 @@ export function buildListSnapshot(params: {
         no,
         receiptDate: formatListDate(row.receiptDate),
         customerInfo: row.customerInfo,
+        productCategory: productCategoryLabel,
         productName: productLabel,
         departmentOwner: deptLabel,
         content: row.content,
@@ -377,6 +381,7 @@ export function buildListSnapshot(params: {
         no: String(row.no),
         createdAt: formatListDate(createdAt),
         author: authorLabel,
+        productCategory: row.productCategory,
         itemSpec: row.itemSpec,
         requestReason: row.requestReason,
         reviewDeptOwner: row.reviewDeptOwner,
@@ -404,6 +409,7 @@ export function buildListSnapshot(params: {
         no: String(row.no),
         author: authorLabel,
         reportDate: formatListDate(row.reportDate),
+        productCategory: row.productCategory,
         itemSpec: row.itemSpec,
         problemAndRequest: row.problemAndRequest,
         handlingDeptOwner: row.handlingDeptOwner,
@@ -429,6 +435,7 @@ export function buildListSnapshot(params: {
         no: String(row.no),
         author: authorLabel,
         reportDate: formatListDate(row.reportDate),
+        productCategory: row.productCategory,
         itemSpec: row.itemSpec,
         problemAndRequest: row.problemAndRequest,
         handlingDeptOwner: row.handlingDeptOwner,
