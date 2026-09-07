@@ -5,6 +5,8 @@ import FormsTableSkeleton, {
   FormsListShell,
 } from "@/app/forms/FormsTableSkeleton";
 
+export const dynamic = "force-dynamic";
+
 export default async function FormsPage({
   searchParams,
 }: {

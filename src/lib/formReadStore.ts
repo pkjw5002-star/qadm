@@ -183,16 +183,31 @@ export async function markFormRead(
   formUpdatedAt?: Date | string
 ): Promise<void> {
   if (!userId || !formId) return;
+  await markFormReads(userId, [{ formId, formUpdatedAt }]);
+}
+
+export async function markFormReads(
+  userId: string,
+  items: { formId: string; formUpdatedAt?: Date | string }[]
+): Promise<void> {
+  if (!userId || items.length === 0) return;
 
   const seen = loadFormSeenLocal(userId);
-  const at = toIso(formUpdatedAt ?? new Date());
-  const prev = seen[formId];
-  if (prev && prev >= at) {
+  let changed = false;
+  for (const item of items) {
+    if (!item.formId) continue;
+    const at = toIso(item.formUpdatedAt ?? new Date());
+    const prev = seen[item.formId];
+    if (prev && prev >= at) continue;
+    seen[item.formId] = at;
+    changed = true;
+  }
+
+  if (!changed) {
     dispatchReadChanged(userId);
     return;
   }
 
-  seen[formId] = at;
   saveFormSeenLocal(userId, seen);
   dispatchReadChanged(userId);
   void syncFormSeenToFirebase(userId, seen);

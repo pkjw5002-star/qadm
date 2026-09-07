@@ -5,6 +5,7 @@ import ComplaintFormsTable from "@/app/forms/ComplaintFormsTable";
 import ReviewProcessFilterFormsTable from "@/app/forms/ReviewProcessFilterFormsTable";
 import FormsHomeBoard from "@/app/forms/FormsHomeBoard";
 import { buildRecentBoardRow } from "@/lib/formRecentBoard";
+import { unstable_noStore as noStore } from "next/cache";
 import {
   QUALITY_IMPROVEMENT_LIST_COLUMNS,
   QUALITY_IMPROVEMENT_LIST_STORAGE_KEY,
@@ -64,6 +65,7 @@ export default async function FormsListContent({
     isSuggestionList;
 
   if (!isTypedList) {
+    noStore();
     const forms = await prisma.form.findMany({
       where: undefined,
       orderBy: { updatedAt: "desc" },

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FORM_TYPES, type FormTypeKey } from "@/lib/formTypes";
 import type { RecentBoardRow } from "@/lib/formRecentBoard";
@@ -14,6 +14,7 @@ import {
   isFormNeedsAttention,
   loadFormSeen,
   loadFormSeenLocal,
+  markFormReads,
   type FormSeenMap,
 } from "@/lib/formReadStore";
 
@@ -107,23 +108,34 @@ function FormsBoardTable({
   seen,
   emptyMessage,
   showActivity,
+  markReadEnabled,
+  onMarkRead,
 }: {
   rows: RecentBoardRow[];
   seen: FormSeenMap;
   emptyMessage: string;
   showActivity?: boolean;
+  markReadEnabled?: boolean;
+  onMarkRead?: (rows: RecentBoardRow[]) => void;
 }) {
   const cellBorder = "border-b border-zinc-200";
-  const colCount = showActivity ? 9 : 8;
+  const colCount = (showActivity ? 9 : 8) + (markReadEnabled ? 1 : 0);
   const stickyShadow = "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]";
-  const stickyThNo = showActivity
-    ? `sticky left-[8.5rem] z-30 bg-zinc-100 ${stickyShadow}`
-    : `sticky left-0 z-30 bg-zinc-100 ${stickyShadow}`;
-  const stickyTdNo = showActivity
-    ? `sticky left-[8.5rem] z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`
-    : `sticky left-0 z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
+  /** 최근: 변동 8.5rem + 체크 2rem */
+  const stickyLeftNo = showActivity
+    ? markReadEnabled
+      ? "left-[10.5rem]"
+      : "left-[8.5rem]"
+    : markReadEnabled
+      ? "left-8"
+      : "left-0";
+  const stickyLeftCheck = showActivity ? "left-[8.5rem]" : "left-0";
+  const stickyThNo = `sticky ${stickyLeftNo} z-30 bg-zinc-100 ${stickyShadow}`;
+  const stickyTdNo = `sticky ${stickyLeftNo} z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
   const stickyThActivity = `sticky left-0 z-30 bg-zinc-100 ${stickyShadow}`;
   const stickyTdActivity = `sticky left-0 z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
+  const stickyThCheck = `sticky ${stickyLeftCheck} z-30 bg-zinc-100 ${stickyShadow}`;
+  const stickyTdCheck = `sticky ${stickyLeftCheck} z-20 bg-white group-hover:bg-zinc-50 ${stickyShadow}`;
 
   return (
     <div className="relative max-h-[min(70vh,720px)] overflow-auto overscroll-contain">
@@ -135,6 +147,26 @@ function FormsBoardTable({
                 className={`w-[8.5rem] max-w-[8.5rem] whitespace-nowrap px-2 py-2.5 ${cellBorder} ${stickyThActivity}`}
               >
                 변동
+              </th>
+            ) : null}
+            {markReadEnabled ? (
+              <th
+                className={`w-8 whitespace-nowrap px-1 py-2.5 ${cellBorder} ${stickyThCheck}`}
+                title="전체 읽음 처리"
+              >
+                <input
+                  type="checkbox"
+                  aria-label="전체 선택(읽음 처리)"
+                  checked={false}
+                  disabled={rows.length === 0}
+                  onChange={(e) => {
+                    if (!e.target.checked || !onMarkRead || rows.length === 0)
+                      return;
+                    onMarkRead(rows);
+                    e.target.checked = false;
+                  }}
+                  className="size-3.5 accent-zinc-800"
+                />
               </th>
             ) : null}
             <th
@@ -208,6 +240,23 @@ function FormsBoardTable({
                       </div>
                     </td>
                   ) : null}
+                  {markReadEnabled ? (
+                    <td
+                      className={`w-8 px-1 py-2.5 text-center align-top ${cellBorder} ${stickyTdCheck}`}
+                    >
+                      <input
+                        type="checkbox"
+                        aria-label={`${cellText(row.no)} 읽음 처리`}
+                        checked={false}
+                        onChange={(e) => {
+                          if (!e.target.checked || !onMarkRead) return;
+                          onMarkRead([row]);
+                          e.target.checked = false;
+                        }}
+                        className="size-3.5 accent-zinc-800"
+                      />
+                    </td>
+                  ) : null}
                   <td
                     className={`w-px whitespace-nowrap px-2 py-2.5 text-center align-top ${cellBorder} ${rowClass} ${stickyTdNo}`}
                   >
@@ -273,10 +322,25 @@ export default function FormsHomeBoard({
     loadFormSeenLocal(userId)
   );
   const pathname = usePathname();
+  const router = useRouter();
 
   const refreshSeen = useCallback(() => {
     void loadFormSeen(userId).then(setSeen);
   }, [userId]);
+
+  const markRowsRead = useCallback(
+    (targetRows: RecentBoardRow[]) => {
+      if (targetRows.length === 0) return;
+      void markFormReads(
+        userId,
+        targetRows.map((row) => ({
+          formId: row.id,
+          formUpdatedAt: row.updatedAtIso,
+        }))
+      );
+    },
+    [userId]
+  );
 
   useEffect(() => {
     refreshSeen();
@@ -307,6 +371,33 @@ export default function FormsHomeBoard({
   useEffect(() => {
     if (pathname === "/forms") refreshSeen();
   }, [pathname, refreshSeen]);
+
+  /** 최근게시글: 다른 사용자 수정을 빨리 반영 */
+  useEffect(() => {
+    if (mode !== "recent") return;
+
+    const refreshBoard = () => {
+      router.refresh();
+      refreshSeen();
+    };
+
+    const intervalId = window.setInterval(refreshBoard, 8000);
+    const onFocus = () => refreshBoard();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshBoard();
+    };
+
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pageshow", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pageshow", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [mode, router, refreshSeen]);
 
   const searchFiltered = useMemo(() => {
     const typeQ = filters.formType;
@@ -580,13 +671,18 @@ export default function FormsHomeBoard({
 
       {mode === "recent" ? (
       <section className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-left sm:px-5">
+        <div className="flex items-center gap-3 border-b border-zinc-200 bg-zinc-900 px-4 py-2 text-left sm:px-5">
           <h2 className="pl-[2ch] text-sm font-semibold text-white">최근게시글</h2>
+          <span className="text-xs text-zinc-300">
+            체크 시 읽음 처리되어 목록에서 사라집니다
+          </span>
         </div>
         <FormsBoardTable
           rows={recentUnreadRows}
           seen={seen}
           showActivity
+          markReadEnabled
+          onMarkRead={markRowsRead}
           emptyMessage={
             rows.length === 0
               ? "아직 서식이 없어요. 우측 상단에서 서류작성을 눌러 보세요."
